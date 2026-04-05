@@ -16,12 +16,14 @@ interface ProgressiveRibbonProps {
   currentStageId: string;
   lockedStages?: string[];
   onToggleLock?: (stageId: string) => void;
+  isSystemPaused?: boolean;
 }
 
 const ProgressiveRibbon: React.FC<ProgressiveRibbonProps> = ({ 
   currentStageId, 
   lockedStages = [], 
-  onToggleLock 
+  onToggleLock,
+  isSystemPaused = false
 }) => {
   const currentIndex = STAGES.findIndex(s => s.id === currentStageId);
   const activeIndex = currentIndex === -1 ? 0 : currentIndex;
@@ -34,7 +36,7 @@ const ProgressiveRibbon: React.FC<ProgressiveRibbonProps> = ({
           <line x1="0" y1="0" x2="100%" y2="0" className="stroke-primary/10" strokeWidth="1" />
           <motion.line 
             x1="0" y1="0" x2={`${progressPercent}%`} y2="0" 
-            className="stroke-primary" 
+            className={`${isSystemPaused ? 'stroke-[#E0E0E0]/40' : 'stroke-primary'}`} 
             strokeWidth="1"
             initial={{ x2: 0 }}
             animate={{ x2: `${progressPercent}%` }}
@@ -59,14 +61,16 @@ const ProgressiveRibbon: React.FC<ProgressiveRibbonProps> = ({
                     className={`w-3 h-3 rounded-full border transition-all ${
                       isLocked 
                         ? 'bg-amber-500 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)]'
+                        : isSystemPaused && isActive
+                        ? 'bg-[#E0E0E0] border-[#E0E0E0] shadow-[0_0_15px_rgba(224,224,224,0.3)]'
                         : isActive 
                         ? 'bg-primary border-primary shadow-[0_0_15px_#C4A35A]' 
                         : isCompleted 
                         ? 'bg-primary/40 border-primary/40' 
                         : 'bg-background border-primary/20'
                     }`}
-                    animate={isActive && !isLocked ? { scale: [1, 1.2, 1] } : { scale: 1 }}
-                    transition={isActive && !isLocked ? { repeat: Infinity, duration: 2 } : {}}
+                    animate={isActive && !isLocked && !isSystemPaused ? { scale: [1, 1.2, 1] } : { scale: 1 }}
+                    transition={isActive && !isLocked && !isSystemPaused ? { repeat: Infinity, duration: 2 } : {}}
                   />
                   
                   <AnimatePresence>
@@ -87,12 +91,14 @@ const ProgressiveRibbon: React.FC<ProgressiveRibbonProps> = ({
 
                 <div className="text-center min-h-[30px]">
                   <p className={`text-[10px] font-mono uppercase tracking-[0.1em] transition-colors ${
-                    isLocked ? 'text-amber-500 font-bold' : isActive ? 'text-primary font-bold' : isCompleted ? 'text-primary/60' : 'text-muted-foreground/40'
+                    isLocked ? 'text-amber-500 font-bold' : isSystemPaused && isActive ? 'text-[#E0E0E0] font-bold' : isActive ? 'text-primary font-bold' : isCompleted ? 'text-primary/60' : 'text-muted-foreground/40'
                   }`}>
                     {stage.label}
                   </p>
                   {isLocked ? (
                     <p className="text-[8px] font-mono text-amber-500/60 uppercase mt-0.5 tracking-tighter">Intervention Required</p>
+                  ) : isSystemPaused && isActive ? (
+                    <p className="text-[8px] font-mono text-[#E0E0E0]/40 uppercase mt-0.5 tracking-tighter">Manual Control</p>
                   ) : isActive && (
                     <p className="text-[8px] font-mono text-primary/40 uppercase mt-0.5 animate-pulse font-bold tracking-tighter">Initialising...</p>
                   )}

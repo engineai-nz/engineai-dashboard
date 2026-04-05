@@ -11,6 +11,7 @@ import FlickerOverlay from '@/components/ui/FlickerOverlay';
 import CodeStream from '@/components/ui/CodeStream';
 import DecisionCard from '@/components/ui/DecisionCard';
 import ServicesDesk from './ServicesDesk';
+import ControlSlate from './ControlSlate';
 import { DIVISIONS, DivisionSlug } from '@/lib/data';
 import { useFilteredProjects } from '@/hooks/useFilteredProjects';
 import { useTaskLedger } from '@/hooks/useTaskLedger';
@@ -110,13 +111,7 @@ const HUD: React.FC<HUDProps> = ({ activeDivision = 'global', isSystemPaused = f
       <GlitchOverlay isActive={isSreActive} />
       
       <AnimatePresence>
-        {isSystemPaused && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 pointer-events-none z-[300] border-[12px] border-amber-500/10">
-            <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-amber-500/90 text-black px-6 py-1.5 font-mono font-bold text-[10px] uppercase tracking-[0.3em] shadow-2xl backdrop-blur-sm pointer-events-auto">
-              Orchestration Paused: Manual Control Active
-            </div>
-          </motion.div>
-        )}
+        <ControlSlate isActive={isSystemPaused} />
       </AnimatePresence>
       
       <main className={`flex-1 overflow-y-auto p-4 md:p-6 pb-24 lg:pb-6 space-y-8 bg-background/50 backdrop-blur-sm transition-all duration-500 ${isSystemPaused ? 'grayscale-[0.5] contrast-[0.8]' : ''}`}>
@@ -196,7 +191,12 @@ const HUD: React.FC<HUDProps> = ({ activeDivision = 'global', isSystemPaused = f
                               </div>
                               <span className="text-[9px] font-mono text-primary/60 uppercase">{project.stage} phase</span>
                             </div>
-                            <ProgressiveRibbon currentStageId={project.stage} lockedStages={project.lockedStages} onToggleLock={(stageId) => handleToggleLock(project.id, stageId)} />
+                            <ProgressiveRibbon 
+                              currentStageId={project.stage} 
+                              lockedStages={project.lockedStages} 
+                              onToggleLock={(stageId) => handleToggleLock(project.id, stageId)} 
+                              isSystemPaused={isSystemPaused}
+                            />
                             <div className="mt-4"><CodeStream isActive={isRefactoring && project.status === 'active'} /></div>
                           </div>
                         );
