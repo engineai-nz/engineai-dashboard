@@ -3,10 +3,10 @@ CREATE TABLE public.task_ledger (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   workflow_run_id TEXT NOT NULL,
   step_key        TEXT NOT NULL,
-  agent_role      TEXT NOT NULL CHECK (agent_role IN ('ceo', 'specialist', 'sre', 'manager', 'executive', 'architect', 'developer', 'qa', 'openclaw')),
+  agent_role      TEXT NOT NULL CHECK (agent_role IN ('ceo', 'specialist', 'sre', 'manager', 'executive', 'architect', 'developer', 'qa', 'openclaw', 'system', 'user')),
   tenant_id       UUID NOT NULL,
   status          TEXT NOT NULL DEFAULT 'pending'
-                  CHECK (status IN ('pending','running','checkpoint','completed','failed','dead_letter')),
+                  CHECK (status IN ('pending','active','running','checkpoint','completed','failed','blocked','dead_letter')),
   checkpoint      JSONB NOT NULL DEFAULT '{}'::jsonb, -- Resumable LLM state
   tool_cache      JSONB NOT NULL DEFAULT '[]'::jsonb, -- Cached tool results
   effects_log     JSONB NOT NULL DEFAULT '[]'::jsonb, -- The Outbox (side effects)

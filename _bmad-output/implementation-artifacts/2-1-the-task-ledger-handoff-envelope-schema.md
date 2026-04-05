@@ -75,5 +75,13 @@ Gemini 2.5 Flash
 - [x] [Review][Patch] RLS Performance: Optimized RLS policies to use direct UUID comparison instead of string casting.
 - [x] [Review][Patch] Shared Logic: Abstracted project filtering into the `useFilteredProjects` hook.
 - [x] [Review][Patch] Accessibility: Added `aria-label` attributes to navigation links in the sidebar.
+- [ ] [Review][Patch] Schema Mismatch: AgentRoleSchema includes 'system' and 'user' not in DB constraint. [src/lib/schemas/handoff.ts:4]
+- [ ] [Review][Patch] Schema Mismatch: TaskStatusSchema includes 'active' and 'blocked' not in DB constraint. [src/lib/schemas/handoff.ts:21]
+- [ ] [Review][Patch] Missing mapping: `createLedgerTask` omits `tool_cache` and `last_error`. [src/lib/tasks.ts:10]
+- [ ] [Review][Patch] Missing logic: Deterministic `effect_id` generation utility is absent. [src/lib/schemas/handoff.ts:46]
+- [ ] [Review][Patch] Missing logic: Side-effect idempotency check in `effects_log` is absent. [src/lib/tasks.ts:42]
+- [ ] [Review][Patch] Missing logic: Resumption/replay logic for `tool_cache` and `checkpoint`. [src/lib/tasks.ts]
+- [ ] [Review][Patch] Error Handling: `createLedgerTask` does not handle uniqueness violations (workflow_run_id + step_key). [src/lib/tasks.ts:26]
+- [ ] [Review][Patch] Missing field: `completed_at` should be updated on completion. [src/lib/tasks.ts]
 
 Status: review
