@@ -1,5 +1,5 @@
 # generated: 2026-04-04T23:01:11Z
-# last_updated: 2026-04-04T23:01:11Z
+# last_updated: 2026-04-06T09:00:00Z
 # project: EngineAI Dashboard
 # project_key: NOKEY
 # tracking_system: file-system
@@ -26,62 +26,55 @@
 # Retrospective Status:
 #   - optional: Can be completed but not required
 #   - done: Retrospective has been completed
-#
-# WORKFLOW NOTES:
-# ===============
-# - Epic transitions to 'in-progress' automatically when first story is created
-# - Stories can be worked in parallel if team capacity allows
-# - SM typically creates next story after previous one is 'done' to incorporate learnings
-# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-04T23:01:11Z
-last_updated: 2026-04-05T18:00:00Z
+last_updated: 2026-04-06T15:00:00Z
 project: EngineAI Dashboard
 project_key: NOKEY
 tracking_system: file-system
 story_location: _bmad-output/implementation-artifacts
 
 development_status:
-  epic-1: done
+  epic-1: in-progress
   1-1-project-scaffolding-tech-noir-theme: done
   1-2-secure-executive-auth-multi-tenant-isolation: done
   1-3-the-global-pulse-monaco-layout: done
-  1-4-division-routing-kpi-dashboards: done
-  1-5-the-progressive-ribbon-visualization: done
-  1-6-mobile-oversight-nl-query-core: done
-  epic-1-retrospective: done
-  epic-2: done
-  2-1-the-task-ledger-handoff-envelope-schema: done
-  2-2-vercel-workflows-pipeline-the-2-agent-loop: done
-  2-3-audit-drill-down-agent-reasoning-logs: done
-  2-4-the-supervisor-sre-agent-self-healing-logic: done
-  2-5-manual-override-pause-terminate-protocol: done
-  epic-2-retrospective: done
-  epic-3: done
-  3-1-the-quick-look-portal-glass-morphic-previews: done
-  3-2-the-decision-hud-why-first-summaries: done
-  3-3-the-surgical-lock-protocol-hitl-intervention: done
-  3-4-the-validation-guard-automated-build-lint-checks: done
-  3-5-ast-text-sync-ui-flicker-feedback: done
-  epic-3-retrospective: done
-  epic-4: done
-  4-1-the-provisioning-saga-ledger-idempotency: done
-  4-2-autonomous-repository-cloning-branch-management: done
-  4-3-ast-based-code-refactoring-engine: done
-  4-4-automated-pull-request-conflict-resolution: done
-  4-5-secret-injection-sealed-envelope-pattern: done
-  epic-4-retrospective: done
-  epic-5: done
-  5-1-the-founders-knowledge-centre-intelligence-hub-ui: done
-  5-2-autonomous-research-agent-industry-intel-curation: done
-  5-3-the-idea-forge-brainstorming-technical-assessments: done
-  5-4-bmb-hot-loading-live-agent-workflow-activation: done
-  epic-5-retrospective: done
-  epic-6: done
-  6-1-the-marketing-agent-social-content-loop: done
-  6-2-the-report-engine-performance-slide-decks: done
-  6-3-client-services-desk-workflow-interrogation: done
-  6-4-it-infrastructure-support-agent: done
-  6-5-the-openclaw-bridge-agent-communication-gateway: done
-  6-6-the-omni-channel-command-strip: done
-  epic-6-retrospective: done
+  1-4-division-routing-kpi-dashboards: review
+  1-5-the-progressive-ribbon-visualization: backlog
+  1-6-mobile-oversight-nl-query-core: backlog
+  epic-1-retrospective: optional
+  epic-2: backlog
+  2-1-the-task-ledger-handoff-envelope-schema: backlog
+  2-2-vercel-workflows-pipeline-the-2-agent-loop: backlog
+  2-3-audit-drill-down-agent-reasoning-logs: backlog
+  2-4-the-supervisor-sre-agent-self-healing-logic: backlog
+  2-5-manual-override-pause-terminate-protocol: backlog
+  epic-2-retrospective: optional
+  epic-3: backlog
+  3-1-the-quick-look-portal-glass-morphic-previews: backlog
+  3-2-the-decision-hud-why-first-summaries: backlog
+  3-3-the-surgical-lock-protocol-hitl-intervention: backlog
+  3-4-the-validation-guard-automated-build-lint-checks: backlog
+  3-5-ast-text-sync-ui-flicker-feedback: backlog
+  epic-3-retrospective: optional
+  epic-4: backlog
+  4-1-the-provisioning-saga-ledger-idempotency: backlog
+  4-2-autonomous-repository-cloning-branch-management: backlog
+  4-3-ast-based-code-refactoring-engine: backlog
+  4-4-automated-pull-request-conflict-resolution: backlog
+  4-5-secret-injection-sealed-envelope-pattern: backlog
+  epic-4-retrospective: optional
+  epic-5: backlog
+  5-1-the-founders-knowledge-centre-intelligence-hub-ui: backlog
+  5-2-autonomous-research-agent-industry-intel-curation: backlog
+  5-3-the-idea-forge-brainstorming-technical-assessments: backlog
+  5-4-bmb-hot-loading-live-agent-workflow-activation: backlog
+  epic-5-retrospective: optional
+  epic-6: backlog
+  6-1-the-marketing-agent-social-content-loop: backlog
+  6-2-the-report-engine-performance-slide-decks: backlog
+  6-3-client-services-desk-workflow-interrogation: backlog
+  6-4-it-infrastructure-support-agent: backlog
+  6-5-the-openclaw-bridge-agent-communication-gateway: backlog
+  6-6-the-omni-channel-command-strip: backlog
+  epic-6-retrospective: optional
