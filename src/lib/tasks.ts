@@ -19,17 +19,17 @@ export async function createLedgerTask(task: HandoffEnvelope) {
 }
 
 /**
- * checkTaskExists
+ * findTask
  * 
  * Verifies if a task with specific title and status exists for a tenant.
- * Used for saga idempotency.
+ * Used for saga idempotency and state recovery.
  */
-export async function checkTaskExists(tenant_id: string, task_title: string, status: string = 'completed') {
+export async function findTask(tenant_id: string, task_title: string, status: string = 'completed') {
   const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('task_ledger')
-    .select('id')
+    .select('*')
     .eq('tenant_id', tenant_id)
     .eq('task_title', task_title)
     .eq('status', status)
@@ -38,5 +38,15 @@ export async function checkTaskExists(tenant_id: string, task_title: string, sta
     .maybeSingle();
 
   if (error) throw error;
-  return !!data;
+  return data;
+}
+
+/**
+ * checkTaskExists
+ * 
+ * Simple boolean check for task existence.
+ */
+export async function checkTaskExists(tenant_id: string, task_title: string, status: string = 'completed') {
+  const task = await findTask(tenant_id, task_title, status);
+  return !!task;
 }
