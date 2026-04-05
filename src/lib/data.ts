@@ -72,9 +72,9 @@ export interface Project {
 }
 
 export const MOCK_PROJECTS: Project[] = [
-  { id: '1', name: 'Jackson Construction', division: 'biab', status: 'active', stage: 'build', lockedStages: [] },
+  { id: '1', name: 'Jackson Construction', division: 'biab', status: 'active', stage: 'implementation', lockedStages: [] },
   { id: '2', name: 'Stellar Logistics', division: 'biab', status: 'idle', stage: 'analysis', lockedStages: [] },
   { id: '3', name: 'Nexus Pharma', division: 'skunkworks', status: 'blocked', stage: 'plan', lockedStages: ['plan'] },
-  { id: '4', name: 'OpenClaw Bridge', division: 'modular', status: 'active', stage: 'solution', lockedStages: [] },
-  { id: '5', name: 'Founder Desktop', division: 'desktop', status: 'active', stage: 'deploy', lockedStages: [] },
+  { id: '4', name: 'OpenClaw Bridge', division: 'modular', status: 'active', stage: 'solutioning', lockedStages: [] },
+  { id: '5', name: 'Founder Desktop', division: 'desktop', status: 'active', stage: 'handoff', lockedStages: [] },
 ];

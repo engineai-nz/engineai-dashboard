@@ -5,11 +5,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Lock } from 'lucide-react';
 
 const STAGES = [
+  { id: 'discovery', label: 'Discovery' },
   { id: 'analysis', label: 'Analysis' },
   { id: 'plan', label: 'Plan' },
-  { id: 'solution', label: 'Solution' },
-  { id: 'build', label: 'Build' },
-  { id: 'deploy', label: 'Deploy' },
+  { id: 'solutioning', label: 'Solutioning' },
+  { id: 'implementation', label: 'Implementation' },
+  { id: 'handoff', label: 'Handoff' },
 ];
 
 interface ProgressiveRibbonProps {
@@ -29,16 +30,16 @@ const ProgressiveRibbon: React.FC<ProgressiveRibbonProps> = ({
 
   return (
     <div className="w-full py-8 px-4 overflow-x-auto scrollbar-hide">
-      <div className="min-w-[600px] relative h-20">
+      <div className="min-w-[600px] lg:min-w-0 relative h-20">
         <svg className="absolute top-1/2 left-0 w-full h-1 -translate-y-1/2 overflow-visible">
-          <line x1="0" y1="0" x2="100%" y2="0" className="stroke-primary/10" strokeWidth="1" />
+          <line x1="0" y1="0" x2="100%" y2="0" className="stroke-gold/10" strokeWidth="1" />
           <motion.line 
             x1="0" y1="0" x2={`${progressPercent}%`} y2="0" 
-            className="stroke-primary" 
+            className="stroke-gold" 
             strokeWidth="1"
             initial={{ x2: 0 }}
             animate={{ x2: `${progressPercent}%` }}
-            transition={{ duration: 0.8, ease: "easeInOut" }}
+            transition={{ duration: 1.2, ease: "easeInOut" }}
           />
         </svg>
 
@@ -60,13 +61,20 @@ const ProgressiveRibbon: React.FC<ProgressiveRibbonProps> = ({
                       isLocked 
                         ? 'bg-amber-500 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)]'
                         : isActive 
-                        ? 'bg-primary border-primary shadow-[0_0_15px_#C4A35A]' 
+                        ? 'bg-gold border-gold shadow-[0_0_20px_#C4A35A]' 
                         : isCompleted 
-                        ? 'bg-primary/40 border-primary/40' 
-                        : 'bg-background border-primary/20'
+                        ? 'bg-gold/40 border-gold/40 shadow-[0_0_5px_rgba(196,163,90,0.2)]' 
+                        : 'bg-background border-gold/20'
                     }`}
-                    animate={isActive && !isLocked ? { scale: [1, 1.2, 1] } : { scale: 1 }}
-                    transition={isActive && !isLocked ? { repeat: Infinity, duration: 2 } : {}}
+                    animate={isActive && !isLocked ? { 
+                      scale: [1, 1.25, 1],
+                      boxShadow: [
+                        '0 0 15px rgba(196,163,90,0.5)', 
+                        '0 0 30px rgba(196,163,90,0.8)', 
+                        '0 0 15px rgba(196,163,90,0.5)'
+                      ]
+                    } : {}}
+                    transition={isActive && !isLocked ? { repeat: Infinity, duration: 2.5, ease: "easeInOut" } : {}}
                   />
                   
                   <AnimatePresence>
@@ -82,19 +90,19 @@ const ProgressiveRibbon: React.FC<ProgressiveRibbonProps> = ({
                     )}
                   </AnimatePresence>
 
-                  <div className="absolute -inset-2 border border-primary/0 group-hover:border-primary/20 rounded-full transition-colors" />
+                  <div className="absolute -inset-2 border border-gold/0 group-hover:border-gold/20 rounded-full transition-colors" />
                 </button>
 
                 <div className="text-center min-h-[30px]">
                   <p className={`text-[10px] font-mono uppercase tracking-[0.1em] transition-colors ${
-                    isLocked ? 'text-amber-500 font-bold' : isActive ? 'text-primary font-bold' : isCompleted ? 'text-primary/60' : 'text-muted-foreground/40'
+                    isLocked ? 'text-amber-500 font-bold' : isActive ? 'text-gold font-bold' : isCompleted ? 'text-gold/60' : 'text-muted-foreground/40'
                   }`}>
                     {stage.label}
                   </p>
                   {isLocked ? (
                     <p className="text-[8px] font-mono text-amber-500/60 uppercase mt-0.5 tracking-tighter">Intervention Required</p>
                   ) : isActive && (
-                    <p className="text-[8px] font-mono text-primary/40 uppercase mt-0.5 animate-pulse font-bold tracking-tighter">Initialising...</p>
+                    <p className="text-[8px] font-mono text-gold/40 uppercase mt-0.5 animate-pulse font-bold tracking-tighter">Initialising...</p>
                   )}
                 </div>
               </div>
