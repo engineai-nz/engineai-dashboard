@@ -76,4 +76,4 @@ Gemini 2.5 Flash
 - [x] [Review][Patch] Shared Logic: Abstracted project filtering into the `useFilteredProjects` hook.
 - [x] [Review][Patch] Accessibility: Added `aria-label` attributes to navigation links in the sidebar.
 
-Status: done
+Status: review

@@ -1,15 +1,22 @@
--- Create Task Ledger Table
+-- Create Task Ledger Table (High-Integrity ADR-004 Version)
 CREATE TABLE public.task_ledger (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id UUID NOT NULL,
-  parent_task_id UUID REFERENCES public.task_ledger(id),
-  sender_role TEXT NOT NULL,
-  recipient_role TEXT NOT NULL,
-  task_title TEXT NOT NULL,
-  payload JSONB NOT NULL DEFAULT '{}'::jsonb,
-  status TEXT NOT NULL DEFAULT 'pending',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  workflow_run_id TEXT NOT NULL,
+  step_key        TEXT NOT NULL,
+  agent_role      TEXT NOT NULL CHECK (agent_role IN ('ceo', 'specialist', 'sre', 'manager', 'executive', 'architect', 'developer', 'qa', 'openclaw')),
+  tenant_id       UUID NOT NULL,
+  status          TEXT NOT NULL DEFAULT 'pending'
+                  CHECK (status IN ('pending','running','checkpoint','completed','failed','dead_letter')),
+  checkpoint      JSONB NOT NULL DEFAULT '{}'::jsonb, -- Resumable LLM state
+  tool_cache      JSONB NOT NULL DEFAULT '[]'::jsonb, -- Cached tool results
+  effects_log     JSONB NOT NULL DEFAULT '[]'::jsonb, -- The Outbox (side effects)
+  attempts        INTEGER NOT NULL DEFAULT 0,
+  max_attempts    INTEGER NOT NULL DEFAULT 3,
+  last_error      TEXT,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  completed_at    TIMESTAMPTZ,
+  UNIQUE (workflow_run_id, step_key)
 );
 
 -- Enable RLS
