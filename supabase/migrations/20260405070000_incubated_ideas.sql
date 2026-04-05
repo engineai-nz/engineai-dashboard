@@ -19,7 +19,7 @@ ALTER TABLE public.incubated_ideas ENABLE ROW LEVEL SECURITY;
 -- Create Tenant isolation policy
 CREATE POLICY "Executives can manage their tenant's incubated ideas" ON public.incubated_ideas
   FOR ALL USING (
-    tenant_id = (auth.jwt() -> 'user_metadata' ->> 'tenant_id')::uuid
+    tenant_id = (auth.jwt() -> 'app_metadata' ->> 'tenant_id')::uuid
   );
 
 -- Function to handle updated_at

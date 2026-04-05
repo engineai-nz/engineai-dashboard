@@ -22,9 +22,8 @@ ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can only access their own tenant's projects"
     ON public.projects
     FOR ALL
-    USING (tenant_id = (auth.jwt() -> 'user_metadata' ->> 'tenant_id')::uuid)
-    WITH CHECK (tenant_id = (auth.jwt() -> 'user_metadata' ->> 'tenant_id')::uuid);
+    USING (tenant_id = (auth.jwt() -> 'app_metadata' ->> 'tenant_id')::uuid)
+    WITH CHECK (tenant_id = (auth.jwt() -> 'app_metadata' ->> 'tenant_id')::uuid);
 
 -- Grant permissions
 GRANT ALL ON public.projects TO authenticated;
-GRANT SELECT ON public.projects TO anon;

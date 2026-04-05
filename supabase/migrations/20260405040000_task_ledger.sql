@@ -18,17 +18,17 @@ ALTER TABLE public.task_ledger ENABLE ROW LEVEL SECURITY;
 -- Create Tenant isolation policy
 CREATE POLICY "Executives can view their tenant's ledger" ON public.task_ledger
   FOR SELECT USING (
-    tenant_id = (auth.jwt() -> 'user_metadata' ->> 'tenant_id')::uuid
+    tenant_id = (auth.jwt() -> 'app_metadata' ->> 'tenant_id')::uuid
   );
 
 CREATE POLICY "Agents can insert into their tenant's ledger" ON public.task_ledger
   FOR INSERT WITH CHECK (
-    tenant_id = (auth.jwt() -> 'user_metadata' ->> 'tenant_id')::uuid
+    tenant_id = (auth.jwt() -> 'app_metadata' ->> 'tenant_id')::uuid
   );
 
 CREATE POLICY "Agents can update within their tenant's ledger" ON public.task_ledger
   FOR UPDATE USING (
-    tenant_id = (auth.jwt() -> 'user_metadata' ->> 'tenant_id')::uuid
+    tenant_id = (auth.jwt() -> 'app_metadata' ->> 'tenant_id')::uuid
   );
 
 -- Function to handle updated_at

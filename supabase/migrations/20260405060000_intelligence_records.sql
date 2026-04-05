@@ -22,7 +22,7 @@ ALTER TABLE public.intelligence_records ENABLE ROW LEVEL SECURITY;
 -- Create Tenant isolation policy
 CREATE POLICY "Executives can manage their tenant's research" ON public.intelligence_records
   FOR ALL USING (
-    tenant_id = (auth.jwt() -> 'user_metadata' ->> 'tenant_id')::uuid
+    tenant_id = (auth.jwt() -> 'app_metadata' ->> 'tenant_id')::uuid
   );
 
 -- Function to handle updated_at

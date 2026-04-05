@@ -18,7 +18,7 @@ ALTER TABLE public.project_secrets ENABLE ROW LEVEL SECURITY;
 -- Create Tenant isolation policy
 CREATE POLICY "Executives can manage their tenant's secrets" ON public.project_secrets
   FOR ALL USING (
-    tenant_id = (auth.jwt() -> 'user_metadata' ->> 'tenant_id')::uuid
+    tenant_id = (auth.jwt() -> 'app_metadata' ->> 'tenant_id')::uuid
   );
 
 -- Function to handle updated_at
