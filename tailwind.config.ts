@@ -11,14 +11,20 @@ export default {
     extend: {
       colors: {
         background: "#0A0A0A",
-        surface: "#121212",
+        surface: "#111111",
+        gold: {
+          DEFAULT: "#C4A35A",
+          foreground: "#000000",
+        },
         primary: {
           DEFAULT: "#C4A35A",
           foreground: "#000000",
         },
-        muted: {
-          DEFAULT: "#E0E0E0",
-          foreground: "#666666",
+        text: {
+          primary: "#E8E6E1",
+          highlight: "#F2EFE8",
+          secondary: "#888888",
+          muted: "#555555",
         },
       },
       fontFamily: {

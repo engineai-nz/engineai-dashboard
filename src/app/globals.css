@@ -2,17 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: 10 10 10; /* #0A0A0A */
-  --foreground: 224 224 224; /* #E0E0E0 */
-  --primary: 196 163 90; /* #C4A35A */
-  --surface: 18 18 18; /* #121212 */
-}
+@layer base {
+  :root {
+    --background: #0A0A0A;
+    --surface: #111111;
+    --gold: #C4A35A;
+    --text-primary: #E8E6E1;
+    --text-secondary: #888888;
+  }
 
-body {
-  background-color: rgb(var(--background));
-  color: rgb(var(--foreground));
-  font-family: var(--font-inter), sans-serif;
+  body {
+    background: linear-gradient(145deg, #080808 0%, #0f0f0f 48%, #0a0a0a 100%);
+    color: var(--text-primary);
+    font-family: var(--font-inter), sans-serif;
+    min-height: 100vh;
+  }
 }
 
 .mono {
