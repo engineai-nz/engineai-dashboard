@@ -77,4 +77,7 @@ export const MOCK_PROJECTS: Project[] = [
   { id: '3', name: 'Nexus Pharma', division: 'skunkworks', status: 'blocked', stage: 'plan', lockedStages: ['plan'] },
   { id: '4', name: 'OpenClaw Bridge', division: 'modular', status: 'active', stage: 'solution', lockedStages: [] },
   { id: '5', name: 'Founder Desktop', division: 'desktop', status: 'active', stage: 'deploy', lockedStages: [] },
+  { id: '6', name: 'Aero Dynamics', division: 'skunkworks', status: 'active', stage: 'research', lockedStages: [] },
+  { id: '7', name: 'Green Earth', division: 'biab', status: 'idle', stage: 'provisioning', lockedStages: [] },
+  { id: '8', name: 'Quantum Core', division: 'modular', status: 'active', stage: 'testing', lockedStages: [] },
 ];

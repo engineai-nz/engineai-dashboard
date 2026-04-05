@@ -18,15 +18,18 @@ import { useActiveModules } from '@/hooks/useActiveModules';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ShieldCheck, ShieldAlert, Cpu, Database, Github, GitBranch, GitPullRequest, ExternalLink, Lock, Rocket, LayoutDashboard, LifeBuoy } from 'lucide-react';
 
+import ManualOverride from "./ManualOverride";
+
 type CockpitMode = 'operations' | 'services';
 
 interface HUDProps {
   activeDivision?: DivisionSlug;
-  isSystemPaused?: boolean;
 }
 
-const HUD: React.FC<HUDProps> = ({ activeDivision = 'global', isSystemPaused = false }) => {
+const HUD: React.FC<HUDProps> = ({ activeDivision = 'global' }) => {
   const [mode, setMode] = useState<CockpitMode>('operations');
+  const [systemStatus, setSystemStatus] = useState<'active' | 'paused' | 'terminated'>('active');
+
   const division = useMemo(() => 
     Array.isArray(DIVISIONS) ? (DIVISIONS.find(d => d.slug === activeDivision) || DIVISIONS.find(d => d.slug === 'global') || DIVISIONS[0]) : null
   , [activeDivision]);
@@ -47,6 +50,15 @@ const HUD: React.FC<HUDProps> = ({ activeDivision = 'global', isSystemPaused = f
   if (!division) {
     return <div className="p-8 text-red-500 font-mono text-xs uppercase text-center border border-red-500/20 bg-red-500/5 uppercase">CRITICAL: SYSTEM DATA CORRUPTED</div>;
   }
+
+  const handleOverride = async (state: 'active' | 'paused' | 'terminated') => {
+    setSystemStatus(state);
+    if (state !== 'active') {
+      console.log(`SYSTEM: Executive Override Initiated - State: ${state.toUpperCase()}`);
+    }
+  };
+
+  const isSystemPaused = systemStatus === 'paused' || systemStatus === 'terminated';
 
   // Memoize latest decision
   const latestDecision = useMemo(() => {
@@ -105,21 +117,49 @@ const HUD: React.FC<HUDProps> = ({ activeDivision = 'global', isSystemPaused = f
   }, [tasks]);
 
   return (
-    <div className="flex flex-col lg:flex-row h-auto lg:h-[calc(100vh-4rem)] overflow-hidden relative">
-      <Sidebar activeDivision={activeDivision} />
-      <GlitchOverlay isActive={isSreActive} />
-      
-      <AnimatePresence>
-        {isSystemPaused && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 pointer-events-none z-[300] border-[12px] border-amber-500/10">
-            <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-amber-500/90 text-black px-6 py-1.5 font-mono font-bold text-[10px] uppercase tracking-[0.3em] shadow-2xl backdrop-blur-sm pointer-events-auto">
-              Orchestration Paused: Manual Control Active
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
-      <main className={`flex-1 overflow-y-auto p-4 md:p-6 pb-24 lg:pb-6 space-y-8 bg-background/50 backdrop-blur-sm transition-all duration-500 ${isSystemPaused ? 'grayscale-[0.5] contrast-[0.8]' : ''}`}>
+    <div className="min-h-screen bg-background text-muted selection:bg-primary selection:text-primary-foreground flex flex-col">
+      {/* HUD Header Bar */}
+      <nav className="h-16 border-b border-primary/20 flex items-center justify-between px-6 bg-surface/80 backdrop-blur-md sticky top-0 z-50">
+        <div className="flex items-center gap-4">
+          <div className="w-8 h-8 bg-primary/10 border border-primary/30 flex items-center justify-center shadow-[0_0_15px_rgba(196,163,90,0.1)]">
+            <span className="text-primary font-bold">EA</span>
+          </div>
+          <span className="font-bold tracking-tighter text-muted uppercase">EngineAI <span className="text-primary tracking-widest ml-1 font-mono">OS</span></span>
+        </div>
+        
+        <div className="flex gap-6 items-center">
+          <div className="hidden md:flex gap-4">
+            <span className={`text-[10px] font-mono uppercase transition-colors ${systemStatus !== 'active' ? 'text-amber-500' : 'text-primary/60'}`}>
+              System: {systemStatus.toUpperCase()}
+            </span>
+            <span className="text-[10px] font-mono text-primary/60 uppercase">Tenant: Executive</span>
+          </div>
+
+          <div className="h-8 w-[1px] bg-primary/10 hidden md:block" />
+
+          <ManualOverride onOverride={handleOverride} systemStatus={systemStatus} />
+          
+          <button className="bg-primary/10 border border-primary/20 text-[10px] font-mono text-primary px-3 py-1.5 hover:bg-primary/20 transition-colors uppercase tracking-widest font-bold">
+            Initialise
+          </button>
+        </div>
+      </nav>
+
+      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden relative">
+        <Sidebar activeDivision={activeDivision} />
+        <GlitchOverlay isActive={isSreActive} />
+        
+        <AnimatePresence>
+          {isSystemPaused && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 pointer-events-none z-[300] border-[12px] border-amber-500/10">
+              <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-amber-500/90 text-black px-6 py-1.5 font-mono font-bold text-[10px] uppercase tracking-[0.3em] shadow-2xl backdrop-blur-sm pointer-events-auto">
+                Orchestration Paused: Manual Control Active
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
+        <main className={`flex-1 overflow-y-auto p-4 md:p-6 pb-24 lg:pb-6 space-y-8 bg-background/50 backdrop-blur-sm transition-all duration-500 ${isSystemPaused ? 'grayscale-[0.5] contrast-[0.8]' : ''}`}>
         <header className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-primary/10 pb-6 gap-4 font-mono relative z-20">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-1">
@@ -160,15 +200,46 @@ const HUD: React.FC<HUDProps> = ({ activeDivision = 'global', isSystemPaused = f
               </section>
 
               <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 relative z-20">
-                {division.kpis?.map((kpi, idx) => (
-                  <TelemetryCard 
-                    key={`${division.slug}-${kpi.key}-${idx}`} 
-                    label={kpi.label} 
-                    value={kpi.key === 'health' ? systemHealth.value : 'READ'} 
-                    trend={kpi.key === 'health' ? systemHealth.latency : undefined}
-                    status={kpi.key === 'health' ? systemHealth.status : 'nominal'}
-                  />
-                ))}
+                {division.kpis?.map((kpi, idx) => {
+                  let val: string | number = 'READ';
+                  let trend: string | undefined = undefined;
+                  let status: 'nominal' | 'warning' | 'critical' = 'nominal';
+
+                  if (kpi.key === 'health') {
+                    val = systemHealth.value;
+                    trend = systemHealth.latency;
+                    status = systemHealth.status;
+                  } else if (kpi.key === 'mrr') {
+                    val = '$42.5k';
+                    trend = '+12.4%';
+                  } else if (kpi.key === 'velocity') {
+                    val = '84pts';
+                    trend = '↑ 4.2%';
+                  } else if (kpi.key === 'tokens') {
+                    val = '1.2M';
+                    trend = '32%';
+                    status = 'warning';
+                  } else if (kpi.key === 'burn') {
+                    val = '$12k';
+                    trend = 'Nominal';
+                  } else if (kpi.key === 'hotloads') {
+                    val = '142';
+                    trend = 'Live';
+                  } else if (kpi.key === 'deployments') {
+                    val = '24';
+                    trend = '+3 Today';
+                  }
+
+                  return (
+                    <TelemetryCard 
+                      key={`${division.slug}-${kpi.key}-${idx}`} 
+                      label={kpi.label} 
+                      value={val} 
+                      trend={trend}
+                      status={status}
+                    />
+                  );
+                })}
               </section>
 
               <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-20">

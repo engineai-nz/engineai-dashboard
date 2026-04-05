@@ -1,55 +1,59 @@
 # Story 1.3: The Global Pulse (Monaco Layout)
 
-Status: in-progress
+Status: ready-for-dev
 
 ## Story
 
 As a Founder-Orchestrator,
 I want a high-density "Monaco" layout with a persistent project sidebar and a HUD area,
-so that I can maintain a 5-second pulse check on the entire agency.
+so that I can maintain a 5-second pulse check on the entire agency (UX-DR4).
 
 ## Acceptance Criteria
 
-1. **Persistent Sidebar established** listing all active projects with "Shift-Light" status borders (Engine Gold pulse for active, Static Red for blocked). [Source: epics.md#Story 1.3]
-2. **Main HUD area implemented** with high-density telemetry cards for "Global Heartbeat" metrics (MRR, Burn, Velocity). [Source: ux-design-specification.md#Telemetry Cards]
-3. **Monaco Layout responsive** and adapts to different screen sizes, with a 500ms interaction threshold. [Source: prd.md#NFR1]
-4. **JetBrains Mono utilized for all technical telemetry** and Inter for executive summaries. [Source: ux-design-specification.md#Typography System]
-5. **Glass-morphic effects applied** to HUD overlays following the Tech Noir aesthetic. [Source: ux-design-specification.md#Visual Theme]
+1. **Authenticated dashboard home screen** implemented with the Monaco layout (persistent sidebar + flexible HUD area). [Source: _bmad-output/planning-artifacts/ux-design-specification.md#Design Direction Decision]
+2. **Persistent sidebar** listing all active projects with "Shift-Light" status borders (Pulsing Gold for active, Static Red for risk, Deep Slate for idle). [Source: _bmad-output/planning-artifacts/ux-design-specification.md#Feedback Patterns]
+3. **Main HUD area** displays high-density telemetry cards for "Global Heartbeat" metrics: MRR, Burn, and Velocity. [Source: _bmad-output/planning-artifacts/epics.md#Story 1.3]
+4. **Layout responds** to human interactions within 500ms and "Agent Thinking" visual feedback begins within 2s. [Source: _bmad-output/planning-artifacts/prd.md#Performance]
+5. **Styling strictly follows BRAND.md**: Matte black background (#0A0A0A), Engine Gold (#C4A35A) accents, JetBrains Mono for data, and Inter for text.
 
 ## Tasks / Subtasks
 
-- [x] **Task 1: Sidebar Implementation (AC: 1)**
-  - [x] Create `Sidebar.tsx` in `src/features/cockpit/`.
-  - [x] Implement project list with "Shift-Light" borders using Tailwind `animate-pulse-gold` and red status indicators.
-  - [x] Integrate mock project data for initial pulse verification.
-- [x] **Task 2: HUD Telemetry Cards (AC: 2, 4)**
-  - [x] Create `TelemetryCard.tsx` in `src/components/ui/`.
-  - [x] Implement high-density metrics layout with JetBrains Mono.
-  - [x] Apply Tech Noir styling (`bg-surface`, `border-primary/10`, custom corner accents).
-- [x] **Task 3: Monaco Layout Scaffolding (AC: 3, 5)**
-  - [x] Update `src/app/page.tsx` to use the new layout structure (Navigation + Sidebar + HUD).
-  - [x] Add glass-morphic HUD effects using Tailwind `backdrop-blur-md` and `bg-surface/80`.
-  - [x] Verify interaction responsiveness (<500ms).
-- [x] **Task 4: HUD Integration (AC: 1, 2)**
-  - [x] Integrate `Sidebar` and `TelemetryCard` into the main `HUD.tsx` component.
-  - [x] Establish high-density grid for "Global Heartbeat" metrics.
+- [ ] **Task 1: Monaco Layout Shell (AC: 1, 5)**
+  - [ ] Create `src/app/(dashboard)/layout.tsx` to define the Monaco layout structure.
+  - [ ] Implement a flexible main content area that supports high-density telemetry.
+  - [ ] Ensure the background is matte Tech Noir (#0A0A0A).
+- [ ] **Task 2: Project Sidebar with Shift-Lights (AC: 2, 5)**
+  - [ ] Create `Sidebar.tsx` in `src/components/layout/`.
+  - [ ] Implement project list items with dynamic status borders (Pulsing Gold, Red Glow, Slate).
+  - [ ] Use Lucide React icons for project categorisation.
+  - [ ] Map mock project data (initial) to the sidebar to verify visual states.
+- [ ] **Task 3: Global Heartbeat HUD (AC: 3, 5)**
+  - [ ] Create `TelemetryCard.tsx` in `src/components/dashboard/`.
+  - [ ] Use JetBrains Mono for all numerical metrics and uppercase labels.
+  - [ ] Implement cards for MRR, Burn, and Velocity with micro-sparklines or trend indicators.
+  - [ ] Integrate cards into the dashboard home page (`src/app/(dashboard)/page.tsx`).
+- [ ] **Task 4: Performance & Interaction (AC: 4)**
+  - [ ] Ensure layout transitions and sidebar interactions meet the 500ms responsiveness target.
+  - [ ] Implement "Scan-line" animation overlay for active processing states using Framer Motion.
 
 ## Dev Notes
 
-- **Monaco Layout:** Successfully established a 2-pane structure with a persistent project sidebar and a scrollable telemetry-rich main area.
-- **Visuals:** Followed the "Silverstone-Monaco" hybrid aesthetic with Engine Gold pulse animations and high-contrast monospaced data.
-- **Responsiveness:** Verified the layout adapts to large desktop and tablet viewports.
+- **Architecture Compliance:** Adhere to ADR-003 (Node.js runtime for logic) and ADR-005 (Sealed Envelope Pattern for data).
+- **Design Inspiration:** Formula 1 App/HUD for telemetry cards and high-density precision.
+- **Component Strategy:** Wrap Radix UI primitives for accessible behavior; use Tailwind for visual styling.
+- **Animation:** Use Framer Motion for the "Shift-Light" pulses and "Scan-line" effects.
 
 ### Project Structure Notes
 
-- **Components:** `TelemetryCard` added to `src/components/ui/` for reuse.
-- **Cockpit Feature:** `Sidebar` and `HUD` established in `src/features/cockpit/`.
+- **Feature Grouping:** Dashboard components should reside in `src/components/layout/` or `src/features/cockpit/`.
+- **Route Groups:** Use Next.js `(dashboard)` route group to isolate the executive cockpit from auth and public routes.
 
 ### References
 
-- [Source: ux-design-specification.md] - Layout patterns and Telemetry Card specs.
-- [Source: prd.md] - NFR1: Responsiveness.
-- [Source: BRAND.md] - Color and Font tokens.
+- [Source: BRAND.md] - Colors and typography tokens.
+- [Source: _bmad-output/planning-artifacts/ux-design-specification.md] - Monaco Layout and F1 HUD patterns.
+- [Source: _bmad-output/planning-artifacts/prd.md] - Performance NFRs.
+- [Source: _bmad-output/planning-artifacts/epics.md] - Epic 1: The Executive Cockpit.
 
 ## Dev Agent Record
 
@@ -59,22 +63,10 @@ Gemini 2.5 Flash
 
 ### Debug Log References
 
-- Build successful: 4/4 pages verified.
-- Tailwind pulse animation confirmed working on "Active" project status.
-
 ### Completion Notes List
 
-- Monaco layout implemented with persistent sidebar.
-- Telemetry cards established for MRR, Velocity, and Token Burn.
-- Glass-morphic HUD styling applied.
-- Agent activity feed placeholder added to HUD.
-
-### Review Findings
-
-- [x] [Review][Patch] Text Safety: Added truncation to sidebar and telemetry values.
-- [x] [Review][Patch] Mobile Layout: Fixed sidebar squeezing by adding lg: breakpoint.
-- [x] [Review][Patch] Empty State: Added "No active projects" placeholder to sidebar.
-- [x] [Review][Patch] Glass-morphism: Applied backdrop-blur-md and surface transparency to HUD cards (AC 5).
-- [x] [Review][Patch] Brand Alignment: Refined typography tracking and case for HUD labels.
-
-Status: done
+### File List
+- src/app/(dashboard)/layout.tsx
+- src/app/(dashboard)/page.tsx
+- src/components/layout/Sidebar.tsx
+- src/components/dashboard/TelemetryCard.tsx

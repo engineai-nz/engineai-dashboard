@@ -30,8 +30,8 @@ export default {
       },
       keyframes: {
         "pulse-gold": {
-          "0%, 100%": { opacity: "1", "box-shadow": "0 0 10px #C4A35A" },
-          "50%": { opacity: "0.7", "box-shadow": "0 0 20px #C4A35A" },
+          "0%, 100%": { opacity: "1", "border-color": "#C4A35A", "box-shadow": "0 0 10px #C4A35A" },
+          "50%": { opacity: "0.8", "border-color": "rgba(196, 163, 90, 0.4)", "box-shadow": "0 0 20px #C4A35A" },
         },
       },
     },
