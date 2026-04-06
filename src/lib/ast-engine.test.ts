@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 
 async function testAstEngine() {
-  const testFile = path.join(__dirname, 'test-blueprint.ts');
+  const testFile = path.join(__dirname, 'test-blueprint.tsx');
   
   console.log('--- Testing AST Engine ---');
 

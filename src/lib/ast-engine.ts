@@ -1,4 +1,4 @@
-import { Project, VariableDeclarationKind, SyntaxKind } from 'ts-morph';
+import { Project, VariableDeclarationKind, SyntaxKind, ts } from 'ts-morph';
 import fs from 'fs';
 import path from 'path';
 
@@ -25,7 +25,12 @@ export async function refactorBlueprint(filePath: string, rules: TransformationR
     throw new Error(`CRITICAL: Source file not found at ${filePath}`);
   }
 
-  const project = new Project();
+  const project = new Project({
+    compilerOptions: {
+      jsx: ts.JsxEmit.React,
+      allowJs: true
+    }
+  });
   const sourceFile = project.addSourceFileAtPath(filePath);
 
   console.log(`AST: Initialising refactor for ${filePath}`);
@@ -143,7 +148,12 @@ export async function createBlueprintPlaceholder(filePath: string) {
     fs.mkdirSync(dir, { recursive: true });
   }
 
-  const project = new Project();
+  const project = new Project({
+    compilerOptions: {
+      jsx: ts.JsxEmit.React,
+      allowJs: true
+    }
+  });
   const sourceFile = project.createSourceFile(filePath, `
     export const ORG_NAME = 'BLUEPRINT_ORG';
     export const CLIENT_ID = 'BLUEPRINT_ID';
