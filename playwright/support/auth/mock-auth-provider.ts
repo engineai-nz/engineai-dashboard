@@ -5,14 +5,28 @@ import { type AuthProvider } from '@seontechnologies/playwright-utils/auth-sessi
  * Replace this with a real Supabase auth provider later.
  */
 const mockAuthProvider: AuthProvider = {
-  getEnvironment: (options) => options.environment || 'local',
-  getUserIdentifier: (options) => options.userIdentifier || 'default',
+  getEnvironment: (options) => options?.environment || 'local',
+  getUserIdentifier: (options) => options?.userIdentifier || 'default',
 
   extractToken: (storageState) => {
     return 'mock-token';
   },
 
-  isTokenExpired: (storageState) => {
+  extractCookies: (storageState) => {
+    return [
+      {
+        name: 'sb-auth-token',
+        value: 'mock-token',
+        domain: 'localhost',
+        path: '/',
+        httpOnly: true,
+        secure: false,
+        sameSite: 'Lax',
+      },
+    ];
+  },
+
+  isTokenExpired: (rawToken) => {
     return false;
   },
 
@@ -32,6 +46,10 @@ const mockAuthProvider: AuthProvider = {
       ],
       origins: [],
     };
+  },
+
+  clearToken: (options) => {
+    // Mock implementation
   },
 };
 
