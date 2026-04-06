@@ -202,7 +202,7 @@ const HUD: React.FC<HUDProps> = ({ activeDivision = 'global', isSystemPaused = f
                                 HITL LOCK ACTIVE
                               </div>
                             )}
-                            <div className="flex justify-between items-start mb-4">
+                            <div className="flex justify-between items-start mb-4 relative z-20">
                               <div className="flex flex-wrap items-center gap-3">
                                 <span className="text-[11px] font-bold text-muted uppercase tracking-tight">{project.name}</span>
                                 {isQualityValid && <div className="flex items-center gap-1 text-[8px] font-mono text-green-500 uppercase bg-green-500/10 px-1.5 py-0.5 border border-green-500/20 rounded-xs"><ShieldCheck size={10} /> Quality Verified</div>}
@@ -210,12 +210,16 @@ const HUD: React.FC<HUDProps> = ({ activeDivision = 'global', isSystemPaused = f
                               </div>
                               <span className="text-[9px] font-mono text-primary/60 uppercase">{project.stage} phase</span>
                             </div>
-                            <ProgressiveRibbon currentStageId={project.stage} lockedStages={project.lockedStages} onToggleLock={(stageId) => handleToggleLock(project.id, stageId)} />
-                            <div className="mt-4"><CodeStream isActive={isRefactoring && project.status === 'active'} /></div>
+                            <div className="relative z-20">
+                              <ProgressiveRibbon currentStageId={project.stage} lockedStages={project.lockedStages} onToggleLock={(stageId) => handleToggleLock(project.id, stageId)} />
+                            </div>
+                            <div className="mt-4 relative z-20"><CodeStream isActive={isRefactoring && project.status === 'active'} /></div>
                             
                             {project.status === 'blocked' && (
-                              <div className="absolute inset-0 bg-amber-500/5 backdrop-blur-[1px] flex items-center justify-center z-10 pointer-events-none">
-                                <p className="text-[10px] font-mono text-amber-500/40 uppercase tracking-[0.4em] font-bold">Project Blocked: HITL Active</p>
+                              <div className="absolute inset-0 bg-amber-500/5 backdrop-blur-[2px] flex items-center justify-center z-10">
+                                <div className="mt-20">
+                                  <p className="text-[10px] font-mono text-amber-500/40 uppercase tracking-[0.4em] font-bold">Project Blocked: HITL Active</p>
+                                </div>
                               </div>
                             )}
                           </div>

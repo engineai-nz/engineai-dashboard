@@ -78,3 +78,13 @@ export const MOCK_PROJECTS: Project[] = [
   { id: '4', name: 'OpenClaw Bridge', division: 'modular', status: 'active', stage: 'solution', lockedStages: [] },
   { id: '5', name: 'Founder Desktop', division: 'desktop', status: 'active', stage: 'deploy', lockedStages: [] },
 ];
+
+/**
+ * Persistence helper for mock data
+ */
+export function updateProjectInStore(id: string, updates: Partial<Project>) {
+  const index = MOCK_PROJECTS.findIndex(p => p.id === id);
+  if (index !== -1) {
+    MOCK_PROJECTS[index] = { ...MOCK_PROJECTS[index], ...updates };
+  }
+}

@@ -58,7 +58,7 @@ const ProgressiveRibbon: React.FC<ProgressiveRibbonProps> = ({
                   <motion.div
                     className={`w-3 h-3 rounded-full border transition-all ${
                       isLocked 
-                        ? 'bg-amber-500 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)]'
+                        ? 'bg-[#E0E0E0] border-[#E0E0E0] shadow-[0_0_15px_rgba(224,224,224,0.5)]'
                         : isActive 
                         ? 'bg-primary border-primary shadow-[0_0_15px_#C4A35A]' 
                         : isCompleted 
@@ -73,7 +73,12 @@ const ProgressiveRibbon: React.FC<ProgressiveRibbonProps> = ({
                     {isLocked && (
                       <motion.div 
                         initial={{ opacity: 0, scale: 0.5, y: 10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        animate={{ opacity: [1, 0.6, 1], scale: [1, 1.2, 1], y: 0 }}
+                        transition={{ 
+                          opacity: { repeat: Infinity, duration: 2 },
+                          scale: { repeat: Infinity, duration: 2 },
+                          y: { duration: 0.3 }
+                        }}
                         exit={{ opacity: 0, scale: 0.5 }}
                         className="absolute -top-6 left-1/2 -translate-x-1/2 text-amber-500"
                       >
