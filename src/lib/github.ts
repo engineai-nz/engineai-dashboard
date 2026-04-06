@@ -8,9 +8,10 @@ export const sanitizeForGit = (input: string) =>
 /**
  * createRepository (Simulated)
  */
-export async function createRepository(repoName: string) {
+export async function createRepository(orgName: string, repoName: string) {
   const sanitizedRepo = sanitizeForGit(repoName);
-  console.log(`GITHUB: Initialising repository engine-ai/${sanitizedRepo}`);
+  const fullName = `${orgName}/${sanitizedRepo}`;
+  console.log(`GITHUB: Initialising repository ${fullName}`);
   
   // Simulation: 95% success rate
   if (Math.random() > 0.95) {
@@ -18,8 +19,8 @@ export async function createRepository(repoName: string) {
   }
 
   return {
-    full_name: `engine-ai/${sanitizedRepo}`,
-    html_url: `https://github.com/engine-ai/${sanitizedRepo}`,
+    full_name: fullName,
+    html_url: `https://github.com/${fullName}`,
     id: Math.floor(Math.random() * 1000000).toString()
   };
 }
@@ -27,8 +28,8 @@ export async function createRepository(repoName: string) {
 /**
  * deleteRepository (Simulated)
  */
-export async function deleteRepository(repoFullName: string) {
-  console.log(`GITHUB ROLLBACK: Deleting repository ${repoFullName}`);
+export async function deleteRepository(orgName: string, repoName: string) {
+  console.log(`GITHUB ROLLBACK: Deleting repository ${orgName}/${repoName}`);
   return { success: true };
 }
 
