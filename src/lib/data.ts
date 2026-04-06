@@ -69,12 +69,51 @@ export interface Project {
   status: 'active' | 'blocked' | 'idle';
   stage: string;
   lockedStages?: string[];
+  lastArtifact?: {
+    type: 'markdown' | 'code' | 'sow';
+    content: string;
+    filename?: string;
+  };
 }
 
 export const MOCK_PROJECTS: Project[] = [
-  { id: '1', name: 'Jackson Construction', division: 'biab', status: 'active', stage: 'build', lockedStages: [] },
-  { id: '2', name: 'Stellar Logistics', division: 'biab', status: 'idle', stage: 'analysis', lockedStages: [] },
-  { id: '3', name: 'Nexus Pharma', division: 'skunkworks', status: 'blocked', stage: 'plan', lockedStages: ['plan'] },
+  { 
+    id: '1', 
+    name: 'Jackson Construction', 
+    division: 'biab', 
+    status: 'active', 
+    stage: 'build', 
+    lockedStages: [],
+    lastArtifact: {
+      type: 'code',
+      filename: 'schema.sql',
+      content: 'CREATE TABLE clients (\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\n  name TEXT NOT NULL,\n  created_at TIMESTAMPTZ DEFAULT NOW()\n);'
+    }
+  },
+  { 
+    id: '2', 
+    name: 'Stellar Logistics', 
+    division: 'biab', 
+    status: 'idle', 
+    stage: 'analysis', 
+    lockedStages: [],
+    lastArtifact: {
+      type: 'markdown',
+      content: '# Analysis Report\n\n- Logistic efficiency at 78%\n- Bottleneck identified in Auckland port\n- Recommendation: Autonomous scheduling.'
+    }
+  },
+  { 
+    id: '3', 
+    name: 'Nexus Pharma', 
+    division: 'skunkworks', 
+    status: 'blocked', 
+    stage: 'plan', 
+    lockedStages: ['plan'],
+    lastArtifact: {
+      type: 'sow',
+      content: '## Scope of Work\n\n1. Research R&D Burn Rate\n2. Design Prototype\n3. Execute Skunkworks testing.'
+    }
+  },
   { id: '4', name: 'OpenClaw Bridge', division: 'modular', status: 'active', stage: 'solution', lockedStages: [] },
   { id: '5', name: 'Founder Desktop', division: 'desktop', status: 'active', stage: 'deploy', lockedStages: [] },
 ];

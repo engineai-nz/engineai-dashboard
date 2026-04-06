@@ -13,6 +13,7 @@
     "@google/generative-ai": "^0.21.0",
     "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.101.1",
+    "@types/react-syntax-highlighter": "^15.5.13",
     "@upstash/workflow": "^1.2.0",
     "ai": "^6.0.0",
     "framer-motion": "^12.38.0",
@@ -20,6 +21,8 @@
     "next": "16.0.0",
     "react": "19.2.0",
     "react-dom": "19.2.0",
+    "react-markdown": "^10.1.0",
+    "react-syntax-highlighter": "^16.1.1",
     "ts-morph": "^27.0.2",
     "zod": "^3.24.1"
   },

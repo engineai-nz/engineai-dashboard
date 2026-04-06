@@ -18,11 +18,12 @@ const Sidebar: React.FC<SidebarProps> = ({ activeDivision = 'global' }) => {
   // Quick-Look Portal State
   const [hoveredProject, setHoveredProject] = useState<Project | null>(null);
   const [portalPos, setPortalPos] = useState({ top: 0, left: 0 });
+  const [isPortalHovered, setIsPortalHovered] = useState(false);
 
   // Boundary-aware positioning
   const handleMouseEnter = (e: React.MouseEvent, project: Project) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const portalWidth = 256; // w-64
+    const portalWidth = 320; // w-80
     let left = rect.right + 10;
     
     // Flip to left if overflowing right edge
@@ -32,6 +33,17 @@ const Sidebar: React.FC<SidebarProps> = ({ activeDivision = 'global' }) => {
 
     setPortalPos({ top: rect.top, left });
     setHoveredProject(project);
+  };
+
+  const handleMouseLeave = () => {
+    // Small delay to allow moving to the portal
+    setTimeout(() => {
+      setHoveredProject(prev => {
+        // If the portal itself is hovered, don't close it
+        if (isPortalHovered) return prev;
+        return null;
+      });
+    }, 100);
   };
 
   // Close portal on scroll or division change
@@ -130,7 +142,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeDivision = 'global' }) => {
                 <div
                   key={project.id}
                   onMouseEnter={(e) => handleMouseEnter(e, project)}
-                  onMouseLeave={() => setHoveredProject(null)}
+                  onMouseLeave={handleMouseLeave}
                   className={`p-3 bg-background/50 border-l-2 cursor-pointer hover:bg-background transition-colors group relative ${
                     project.status === 'active'
                       ? 'border-primary animate-pulse-gold'
