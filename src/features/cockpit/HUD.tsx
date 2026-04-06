@@ -69,25 +69,40 @@ const HUD: React.FC<HUDProps> = ({ activeDivision = 'global', isSystemPaused = f
   }, [tasks]);
 
   const projectStatusMap = useMemo(() => {
-    const map: Record<string, { quality?: string; branch?: string; prUrl?: string; prStatus?: string; secrets?: boolean; provisioning?: { github: boolean; supabase: boolean } }> = {};
-    tasks.forEach(t => {
-      const projectName = t.payload?.project_id || t.task_title?.split(': ')[1];
-      if (!projectName) return;
-      if (!map[projectName]) map[projectName] = {};
+    const map: Record<string, { quality?: string; branch?: string; prUrl?: string; prStatus?: string; secrets?: boolean; provisioning?: { github: boolean; supabase: boolean }; resolved?: boolean }> = {};
+    
+    // Sort tasks by creation date (ascending) so later tasks overwrite earlier ones if needed
+    const sortedTasks = [...tasks].sort((a, b) => 
+      new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime()
+    );
+
+    sortedTasks.forEach(t => {
+      // Robust project identification using payload.project_id (manual for root tasks) or title split
+      const projectId = t.payload?.project_id;
+      const projectNameFromTitle = t.task_title?.split(': ')[1];
+      const key = projectId && projectId !== 'manual' ? projectId : projectNameFromTitle;
+      
+      if (!key) return;
+      if (!map[key]) map[key] = {};
+      
       const title = t.task_title || "";
-      if (title.includes('Quality Integrity')) map[projectName].quality = t.status;
-      if (title.includes('Initialise Branch')) map[projectName].branch = t.payload?.branch;
-      if (title.includes('Verify Secrets')) map[projectName].secrets = t.status === 'completed';
-      if (title.includes('PR Pending')) { map[projectName].prUrl = t.payload?.url; map[projectName].prStatus = t.status; }
-      if (title.includes('Provision GitHub')) map[projectName].provisioning = { ...map[projectName].provisioning!, github: t.status === 'completed' };
-      if (title.includes('Provision Supabase')) map[projectName].provisioning = { ...map[projectName].provisioning!, supabase: t.status === 'completed' };
+      if (title.includes('Quality Integrity')) map[key].quality = t.status;
+      if (title.includes('Initialise Branch')) map[key].branch = t.payload?.branch;
+      if (title.includes('Verify Secrets')) map[key].secrets = t.status === 'completed';
+      if (title.includes('PR Pending')) { 
+        map[key].prUrl = t.payload?.url; 
+        map[key].prStatus = t.status; 
+      }
+      if (title.includes('Provision GitHub')) map[key].provisioning = { ...map[key].provisioning!, github: t.status === 'completed' };
+      if (title.includes('Provision Supabase')) map[key].provisioning = { ...map[key].provisioning!, supabase: t.status === 'completed' };
+      if (title.includes('Conflict Resolved')) map[key].resolved = t.status === 'completed';
     });
     return map;
   }, [tasks]);
 
   const handleToggleLock = (projectId: string, stageId: string) => {
     setProjects(prev => prev.map(p => {
-      if (p.id === projectId) {
+      if (p.id === projectId || p.name === projectId) {
         const currentLocks = p.lockedStages || [];
         const isCurrentlyLocked = currentLocks.includes(stageId);
         const nextLocks = isCurrentlyLocked ? currentLocks.filter(s => s !== stageId) : [...currentLocks, stageId];
@@ -183,7 +198,7 @@ const HUD: React.FC<HUDProps> = ({ activeDivision = 'global', isSystemPaused = f
                       <div className="h-full flex items-center justify-center border border-white/[0.07] rounded-lg bg-white/[0.02] opacity-20"><p className="text-[10px] font-mono uppercase tracking-[0.1em] text-secondary">Initialising Component Stream...</p></div>
                     ) : (
                       [...projects, ...modules.map(m => ({ id: m.id, name: m.concept_title, stage: 'analysis', status: 'active' as const, division: 'modular' as any, lockedStages: [] }))].map(project => {
-                        const statusInfo = projectStatusMap[project.name] || {};
+                        const statusInfo = projectStatusMap[project.id] || projectStatusMap[project.name] || {};
                         const isQualityValid = statusInfo.quality === 'completed';
                         const isHotLoaded = modules.some(m => m.id === project.id);
                         return (
@@ -199,13 +214,15 @@ const HUD: React.FC<HUDProps> = ({ activeDivision = 'global', isSystemPaused = f
                                     target="_blank" 
                                     rel="noopener noreferrer" 
                                     className={`flex items-center gap-1 text-[8px] font-mono px-1.5 py-0.5 border rounded-full transition-all hover:bg-white/10 ${
-                                      statusInfo.prStatus === 'blocked' 
+                                      statusInfo.prStatus === 'blocked' && !statusInfo.resolved
                                         ? 'text-red-400 border-red-400/20 bg-red-400/5 animate-pulse' 
-                                        : 'text-blue-400 border-blue-400/20 bg-blue-400/5'
+                                        : statusInfo.resolved 
+                                          ? 'text-gold border-gold/20 bg-gold/5'
+                                          : 'text-blue-400 border-blue-400/20 bg-blue-400/5'
                                     }`}
                                   >
-                                    {statusInfo.prStatus === 'blocked' ? <GitBranch size={10} /> : <GitPullRequest size={10} />}
-                                    {statusInfo.prStatus === 'blocked' ? 'Conflict Detected' : 'PR Pending'}
+                                    {statusInfo.prStatus === 'blocked' && !statusInfo.resolved ? <GitBranch size={10} /> : <GitPullRequest size={10} />}
+                                    {statusInfo.prStatus === 'blocked' && !statusInfo.resolved ? 'Conflict Detected' : statusInfo.resolved ? 'Conflict Resolved' : 'PR Pending'}
                                     <ExternalLink size={8} className="ml-0.5 opacity-50" />
                                   </a>
                                 )}

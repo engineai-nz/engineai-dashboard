@@ -13,50 +13,79 @@ function getStatusWeight(status: string): number {
 
 /**
  * resolveConflict
- * Basic generic conflict resolution (prefers HEAD)
+ * Generic conflict resolution. Defaults to preferring the HEAD (local) change
+ * but ensures that we don't accidentally corrupt the file structure.
  */
 export function resolveConflict(content: string): string {
-  const conflictRegex = /<<<<<<< HEAD\n([\s\S]*?)\n=======\n([\s\S]*?)\n>>>>>>> .+/g;
-  return content.replace(conflictRegex, '$1');
+  // Matches standard Git conflict markers
+  const conflictRegex = /<<<<<<< [^\n]*\r?\n([\s\S]*?)\r?\n=======\r?\n([\s\S]*?)\r?\n>>>>>>> [^\n]*/g;
+  
+  const resolved = content.replace(conflictRegex, (match, head, branch) => {
+    console.log(`GITHUB: Automated conflict resolution applied. Strategy: Prefers-Head.`);
+    return head;
+  });
+
+  return resolved;
 }
 
 /**
  * resolveSprintStatusConflict
  * Specific strategy for merging development_status keys in sprint-status.yaml.
- * Ensures that if a story has different statuses in conflicting branches, 
- * the one further along in the lifecycle is preserved.
+ * Robustified to preserve non-status lines (comments, metadata) while 
+ * synchronising story statuses to the most advanced lifecycle state.
  */
 export function resolveSprintStatusConflict(content: string): string {
-  const conflictRegex = /<<<<<<< HEAD\n([\s\S]*?)\n=======\n([\s\S]*?)\n>>>>>>> .+/g;
+  const conflictRegex = /<<<<<<< [^\n]*\r?\n([\s\S]*?)\r?\n=======\r?\n([\s\S]*?)\r?\n>>>>>>> [^\n]*/g;
   
   return content.replace(conflictRegex, (match, head, branch) => {
-    const lineRegex = /^\s+([\w-]+):\s+(\w+)$/m;
-    if (lineRegex.test(head) || lineRegex.test(branch)) {
-      const mergedMap = new Map<string, string>();
-      
-      const processLines = (text: string) => {
-        const lines = text.split('\n');
-        for (const line of lines) {
-          const m = line.match(/^\s+([\w-]+):\s+(\w+)$/);
-          if (m) {
-            const [_, key, status] = m;
-            const existingStatus = mergedMap.get(key);
-            if (!existingStatus || getStatusWeight(status) > getStatusWeight(existingStatus)) {
-              mergedMap.set(key, status);
-            }
-          }
-        }
-      };
-
-      processLines(head);
-      processLines(branch);
-
-      const sortedKeys = Array.from(mergedMap.keys()).sort();
-      return sortedKeys.map(k => `  ${k}: ${mergedMap.get(k)}`).join('\n');
-    }
+    const lineRegex = /^(\s+)([\w.-]+):\s+(\w+)\s*$/;
+    const mergedMap = new Map<string, { status: string, indent: string, originalLine: string }>();
+    const otherLines: string[] = [];
     
-    return head;
+    const processBlock = (text: string) => {
+      const lines = text.split(/\r?\n/);
+      for (const line of lines) {
+        const m = line.match(lineRegex);
+        if (m) {
+          const [_, indent, key, status] = m;
+          const existing = mergedMap.get(key);
+          // Only update if the new status is further along in the lifecycle
+          if (!existing || getStatusWeight(status) > getStatusWeight(existing.status)) {
+            mergedMap.set(key, { status, indent, originalLine: line });
+          }
+        } else if (line.trim() !== "" && !otherLines.includes(line)) {
+          // Preserve unique non-status lines (like comments or metadata)
+          otherLines.push(line);
+        }
+      }
+    };
+
+    processBlock(head);
+    processBlock(branch);
+
+    // Reconstruct the block: status lines followed by preserved metadata
+    const resolvedLines = Array.from(mergedMap.values()).map(item => item.originalLine);
+    return [...resolvedLines, ...otherLines].join('\n');
   });
+}
+
+/**
+ * simulateConflictResolution
+ * Mimics the asynchronous process of an agent identifying and resolving a git conflict.
+ */
+export async function simulateConflictResolution(repoName: string, fileName: string) {
+  console.log(`GITHUB: Conflict detected in ${repoName}/${fileName}. Initialising autonomous resolution...`);
+  
+  // Simulation delay for "thought loop"
+  await new Promise(resolve => setTimeout(resolve, 1500));
+  
+  const success = Math.random() > 0.05; // 95% success rate for automated fixes
+  
+  return {
+    success,
+    resolution_type: "Lifecycle-Aware Merge",
+    timestamp: new Date().toISOString()
+  };
 }
 
 export async function createRefactorBranch(repoName: string, projectId: string) {

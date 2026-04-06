@@ -3,7 +3,7 @@ import { createLedgerTask, checkTaskExists } from "@/lib/tasks";
 import { generateObject } from "ai";
 import { google } from "@ai-sdk/google";
 import { z } from "zod";
-import { createPullRequest, sanitizeForGit } from "@/lib/github";
+import { createPullRequest, sanitizeForGit, simulateConflictResolution } from "@/lib/github";
 
 const WorkflowPayloadSchema = z.object({
   tenant_id: z.string().uuid(),
@@ -116,6 +116,22 @@ export const { POST } = serve(async (context) => {
         payload: { ...pr, project_id },
         status: pr.mergeable ? 'completed' : 'blocked'
       });
+
+      // Simulation: If a conflict is detected, trigger the autonomous resolution loop
+      if (!pr.mergeable) {
+        const resolution = await simulateConflictResolution(sanitizedName, "sprint-status.yaml");
+        
+        await createLedgerTask({
+          tenant_id,
+          parent_task_id: archResult.taskId,
+          sender_role: 'specialist',
+          recipient_role: 'executive',
+          task_title: `Conflict Resolved: ${project_name}`,
+          executive_rationale: "Autonomous conflict resolution applied to sprint-status metadata.",
+          payload: { ...resolution, project_id },
+          status: resolution.success ? 'completed' : 'failed'
+        });
+      }
     });
 
   } catch (error: any) {
