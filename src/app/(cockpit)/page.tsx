@@ -1,28 +1,35 @@
 /**
- * Cockpit home — Phase 1a placeholder.
+ * Cockpit home — Phase 1a.
  *
- * Step 5 wires in <BriefForm /> and <RunHistory />. For now, this is the
- * empty shell that proves the chrome + Context + RSC boundary all work.
+ * Wires the BriefForm (client) and RunHistory (server) into the shell.
+ * This is the surface the founder sees: submit a brief, watch the run
+ * appear in the history below, click into it for the trace + PRD.
  */
+
+import { BriefForm } from '@/components/BriefForm';
+import { RunHistory } from '@/components/RunHistory';
+
+// Cockpit home reads live tenant data on every request — never prerender.
+// Without this, next build fails because the dev-tenant guard fires in
+// NODE_ENV=production during static export.
+export const dynamic = 'force-dynamic';
 
 export default function CockpitHome() {
   return (
-    <div className="mx-auto max-w-4xl space-y-8">
+    <div className="mx-auto max-w-4xl space-y-10">
       <section>
         <h1 className="font-mono text-xl uppercase tracking-wider text-primary">
           Executive Cockpit
         </h1>
         <p className="mt-2 text-sm text-secondary">
-          Phase 1a — Internal Loop Proof. Submit a brief, watch the run, read
-          the PRD. <span className="text-muted">(BriefForm + RunHistory land in Step 5.)</span>
+          Phase 1a — Internal Loop Proof. Submit a brief, the CEO agent runs
+          Discovery → PRD, the artifact persists.
         </p>
       </section>
 
-      <section className="rounded-sm border border-border bg-surface px-6 py-8">
-        <p className="font-mono text-xs uppercase tracking-wider text-muted">
-          shell ready · awaiting step 3 (supabase) and step 4 (agents)
-        </p>
-      </section>
+      <BriefForm />
+
+      <RunHistory />
     </div>
   );
 }
