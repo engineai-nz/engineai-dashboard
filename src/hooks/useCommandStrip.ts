@@ -1,5 +1,10 @@
 import { useState, useMemo, useCallback } from 'react';
-import { useChat } from 'ai/react';
+// NOTE (ben/qa-bypass-and-build-fix): This hook was originally written against an
+// older Vercel AI SDK API. In `ai`/`@ai-sdk/react` v3+, useChat no longer returns
+// `input`, `setInput`, `append`, `isLoading`. The chat surface below is a local-state
+// scaffold so the cockpit compiles and renders for QA. The real chat integration
+// needs rewriting against the new useChat({ messages, sendMessage, status }) API.
+// See: https://ai-sdk.dev/docs/reference/ai-sdk-ui/use-chat
 
 interface UseCommandStripProps {
   projectName?: string;
@@ -11,14 +16,23 @@ export const MAX_QUERY_LENGTH = 200;
 
 export type TriggerType = 'whatsapp' | 'telegram' | 'email';
 
+interface ScaffoldMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export const useCommandStrip = ({ projectName = '', projectStage = '' }: UseCommandStripProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const [showTriggers, setShowTriggers] = useState(false);
 
-  const { messages, input, setInput, append, isLoading, setMessages } = useChat({
-    api: '/api/mobile/query',
-    initialMessages: [],
-  });
+  // Scaffold chat state — see NOTE above.
+  const [messages, setMessages] = useState<ScaffoldMessage[]>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const append = useCallback((msg: { content: string; role: 'user' | 'assistant' }) => {
+    setMessages((prev) => [...prev, { id: `${Date.now()}-${prev.length}`, ...msg }]);
+  }, []);
 
   const safeProjectName = useMemo(() => projectName.trim(), [projectName]);
   const safeProjectStage = useMemo(() => projectStage.trim(), [projectStage]);
