@@ -46,30 +46,40 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-xs font-mono uppercase text-white/40 block">Identifier (Email)</label>
+            <label htmlFor="login-email" className="text-xs font-mono uppercase text-white/40 block">Identifier (Email)</label>
             <input
+              id="login-email"
+              name="email"
               type="email"
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full bg-white/5 border border-white/10 p-3 text-white focus:border-white/30 outline-none transition-all font-mono text-sm rounded-none"
+              aria-required="true"
+              aria-invalid={error ? 'true' : 'false'}
+              className="w-full bg-white/5 border border-white/10 p-3 text-white focus:border-gold/40 focus:ring-1 focus:ring-gold/20 outline-none transition-all font-mono text-sm rounded-none"
               placeholder="operator@engineai.co.nz"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-mono uppercase text-white/40 block">Access Code (Password)</label>
+            <label htmlFor="login-password" className="text-xs font-mono uppercase text-white/40 block">Access Code (Password)</label>
             <input
+              id="login-password"
+              name="password"
               type="password"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full bg-white/5 border border-white/10 p-3 text-white focus:border-white/30 outline-none transition-all font-mono text-sm rounded-none"
+              aria-required="true"
+              aria-invalid={error ? 'true' : 'false'}
+              className="w-full bg-white/5 border border-white/10 p-3 text-white focus:border-gold/40 focus:ring-1 focus:ring-gold/20 outline-none transition-all font-mono text-sm rounded-none"
             />
           </div>
 
           {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-mono uppercase rounded-none">
+            <div role="alert" className="p-3 bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-mono uppercase rounded-none">
               {error}
             </div>
           )}
@@ -77,7 +87,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-white text-[#1f2228] font-mono font-light py-3 uppercase tracking-[0.1em] hover:opacity-50 transition-opacity disabled:opacity-30 rounded-none"
+            className="w-full bg-gold text-background font-mono font-light py-3 uppercase tracking-[0.1em] hover:bg-gold/80 transition-colors disabled:opacity-30 disabled:cursor-not-allowed rounded-none"
           >
             {loading ? 'Validating...' : 'Initialise Session'}
           </button>
