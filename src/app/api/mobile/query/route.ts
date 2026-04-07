@@ -1,5 +1,5 @@
 import { ceoAgent } from "@/agents/ceo-agent";
-import { streamText } from "ai";
+import { stepCountIs, streamText } from "ai";
 import { z } from "zod";
 
 export const runtime = "edge";
@@ -22,15 +22,15 @@ export async function POST(req: Request) {
 
     const { query } = result.data;
 
-    const response = await streamText({
+    const response = streamText({
       model: ceoAgent.model,
       system: ceoAgent.system,
       messages: [{ role: "user", content: query }],
       tools: ceoAgent.tools,
-      maxSteps: 5, // Allow for tool execution
+      stopWhen: stepCountIs(5), // Allow up to 5 LLM steps for tool execution
     });
 
-    return response.toDataStreamResponse();
+    return response.toUIMessageStreamResponse();
   } catch (error) {
     console.error("Mobile Query Error:", error);
     return new Response(JSON.stringify({ error: "Internal Server Error" }), {

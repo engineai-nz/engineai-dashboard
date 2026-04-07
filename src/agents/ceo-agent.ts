@@ -1,7 +1,7 @@
 import { google } from "@ai-sdk/google";
-import { generateText, streamText, tool } from "ai";
+import { tool } from "ai";
 import { z } from "zod";
-import { MOCK_PROJECTS, DIVISIONS } from "@/lib/data";
+import { MOCK_PROJECTS } from "@/lib/data";
 
 const DEFAULT_MODEL = "gemini-2.0-flash-001";
 
@@ -24,7 +24,7 @@ If you don't have the data, be transparent but professional.`,
   tools: {
     getProjectStatus: tool({
       description: 'Get the current status and stage of a specific project.',
-      parameters: z.object({
+      inputSchema: z.object({
         projectName: z.string().describe('The name of the project to query.'),
       }),
       execute: async ({ projectName }) => {
@@ -43,7 +43,7 @@ If you don't have the data, be transparent but professional.`,
     }),
     getFinancialMetrics: tool({
       description: 'Get financial metrics like MRR or Token Burn.',
-      parameters: z.object({
+      inputSchema: z.object({
         metricType: z.enum(['mrr', 'token_burn']).describe('The type of financial metric to retrieve.'),
         scope: z.enum(['global', 'project']).optional().default('global'),
         projectName: z.string().optional().describe('Project name if scope is project.'),
