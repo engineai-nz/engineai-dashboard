@@ -13,6 +13,7 @@ export interface AuditTask {
   sender_role: string;
   recipient_role: string;
   status: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload: Record<string, any>;
   created_at: string;
   parent?: AuditTask | null;
@@ -26,75 +27,109 @@ interface AuditDrilldownProps {
 const MAX_AUDIT_DEPTH = 10;
 
 const TaskAncestry: React.FC<{ task: AuditTask; depth: number }> = ({ task, depth }) => {
-  if (depth > MAX_AUDIT_DEPTH) return <div className="text-[8px] text-white/40 uppercase font-mono">Max Depth Exceeded</div>;
+  if (depth > MAX_AUDIT_DEPTH) {
+    return (
+      <div className="font-mono text-[9px] uppercase tracking-[0.22em] text-white/30">
+        Max depth exceeded
+      </div>
+    );
+  }
   return (
     <>
       {task.parent && <TaskAncestry task={task.parent} depth={depth + 1} />}
-      <div className={`flex items-center gap-3 ${depth > 0 ? 'opacity-40 grayscale' : ''}`}>
-        <div className={`w-2 h-2 rounded-none ${depth === 0 ? 'bg-white' : 'border border-white/40'}`} />
-        <p className={`text-[10px] font-mono uppercase truncate ${depth === 0 ? 'text-white font-light' : 'text-white/40'}`}>
+      <div className={`flex items-center gap-3 ${depth > 0 ? 'opacity-40' : ''}`}>
+        <span
+          aria-hidden="true"
+          className={`h-2 w-2 shrink-0 rounded-full ${
+            depth === 0
+              ? 'bg-gold shadow-[0_0_10px_rgba(196,163,90,0.6)]'
+              : 'border border-white/30'
+          }`}
+        />
+        <p className={`truncate font-mono text-[11px] uppercase tracking-[0.14em] ${
+          depth === 0 ? 'text-white' : 'text-white/40'
+        }`}>
           {task.task_title}
         </p>
-        {depth > 0 && <ChevronRight size={12} className="text-white/20" />}
+        {depth > 0 && <ChevronRight size={12} className="shrink-0 text-white/20" />}
       </div>
     </>
   );
 };
+
+const SectionLabel: React.FC<{ children: string }> = ({ children }) => (
+  <div className="mb-4 flex items-center gap-3">
+    <span className="font-mono text-[11px] uppercase tracking-[0.3em] text-[#888]">{children}</span>
+    <span className="h-px flex-1 bg-white/[0.07]" />
+  </div>
+);
 
 const AuditDrilldown: React.FC<AuditDrilldownProps> = ({ task, onClose }) => {
   const isMarketingDraft = task.payload?.task_type === 'MARKETING_DRAFT' || task.task_title?.includes('Creative Draft');
   const isPerformanceReport = task.payload?.task_type === 'PERFORMANCE_REPORT' || task.task_title?.includes('Performance Report');
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, x: 20 }}
+    <motion.div
+      initial={{ opacity: 0, x: 24 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 20 }}
-      className="fixed inset-y-0 right-0 w-full lg:w-[500px] bg-[#1f2228] border-l border-white/10 z-[200] flex flex-col"
+      exit={{ opacity: 0, x: 24 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      className="fixed inset-y-0 right-0 z-[200] flex w-full flex-col border-l border-white/[0.07] bg-[rgba(12,12,12,0.94)] backdrop-blur-2xl lg:w-[540px]"
     >
-      <header className="p-6 border-b border-white/10 flex justify-between items-center bg-white/2 font-mono">
-        <div>
-          <p className="text-[10px] text-white/40 uppercase tracking-[0.1em] mb-1">Audit Sequence Trace</p>
-          <h2 className="text-lg font-light font-mono text-white tracking-tight uppercase truncate max-w-[300px]">{task.task_title}</h2>
+      <header className="relative flex items-start justify-between border-b border-white/[0.07] p-7">
+        <div className="absolute inset-x-0 top-0 h-[3px] bg-gold" />
+        <div className="min-w-0 flex-1 pr-4">
+          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[#888]">
+            Audit Sequence Trace
+          </p>
+          <h2 className="mt-2 truncate text-xl font-medium tracking-[-0.02em] text-white">
+            {task.task_title}
+          </h2>
         </div>
-        <button onClick={onClose} aria-label="Close trace" className="p-2 hover:opacity-50 text-white/40 transition-opacity rounded-none">
-          <X size={20} />
+        <button
+          onClick={onClose}
+          aria-label="Close trace"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.02] text-[#cec9c1] transition-all duration-300 hover:border-teal/30 hover:bg-teal/[0.04] hover:text-teal"
+        >
+          <X size={15} />
         </button>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-6 space-y-8">
-        <section className="space-y-4">
-          <h3 className="text-[10px] font-mono text-white/40 uppercase tracking-[0.1em] font-light">Handoff Ancestry (Deep Trace)</h3>
-          <div className="flex flex-col gap-3">
+      <main className="scrollbar-hide flex-1 space-y-10 overflow-y-auto p-7">
+        <section>
+          <SectionLabel>Handoff Ancestry</SectionLabel>
+          <div className="flex flex-col gap-3 rounded-[1.2rem] border border-white/[0.07] bg-black/25 p-5">
             <TaskAncestry task={task} depth={0} />
           </div>
         </section>
 
         {isMarketingDraft && (
-          <section className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <h3 className="text-[10px] font-mono text-white/40 uppercase tracking-[0.1em] font-light">Social Content Preview</h3>
+          <section className="duration-500 animate-in fade-in slide-in-from-bottom-2">
+            <SectionLabel>Social Content Preview</SectionLabel>
             <SocialPreview linkedin={task.payload?.linkedin} twitter={task.payload?.twitter} />
           </section>
         )}
 
         {isPerformanceReport && (
-          <section className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <h3 className="text-[10px] font-mono text-white/40 uppercase tracking-[0.1em] font-light">Performance Report Preview</h3>
-            <ReportPreview 
-              summary={task.payload?.summary} 
-              slides={task.payload?.slides} 
-              artifactUrl={task.payload?.artifact_url} 
+          <section className="duration-500 animate-in fade-in slide-in-from-bottom-2">
+            <SectionLabel>Performance Report Preview</SectionLabel>
+            <ReportPreview
+              summary={task.payload?.summary}
+              slides={task.payload?.slides}
+              artifactUrl={task.payload?.artifact_url}
             />
           </section>
         )}
 
-        <section className="space-y-4">
-          <h3 className="text-[10px] font-mono text-white/40 uppercase tracking-[0.1em] font-light">Reasoning Log</h3>
+        <section>
+          <SectionLabel>Reasoning Log</SectionLabel>
           <ReasoningLog payload={task.payload} role={task.recipient_role} />
         </section>
 
-        <div className="pt-4 border-t border-white/5 text-center">
-          <p className="text-[9px] font-mono text-white/40 uppercase tracking-[0.1em]">Authorisation Verified via Omni-channel Protocol</p>
+        <div className="border-t border-white/[0.07] pt-5 text-center">
+          <p className="font-mono text-[9px] uppercase tracking-[0.26em] text-white/30">
+            Authorisation verified via Omni-channel Protocol
+          </p>
         </div>
       </main>
     </motion.div>
