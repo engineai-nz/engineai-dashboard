@@ -1,0 +1,25 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm run lint
+      - run: npm run test
+      - run: npm run build
+        env:
+          # Phase 1a builds without real Supabase env — lazy-throw means
+          # the build itself doesn't need the vars, only runtime calls do.
+          NEXT_TELEMETRY_DISABLED: '1'
