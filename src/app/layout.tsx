@@ -31,8 +31,19 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <body className="antialiased bg-background text-foreground">
+        {/* Global ambient atmosphere — grid + noise + gold blur blobs.
+            Fixed to the viewport so every route inherits the same brand
+            background without each page having to re-declare it. */}
+        <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+          <div className="ambient-grid absolute inset-0 opacity-40" />
+          <div className="page-noise absolute inset-0 opacity-20" />
+          <div className="absolute left-[-10rem] top-[-8rem] h-[28rem] w-[28rem] rounded-full bg-gold/[0.08] blur-[140px]" />
+          <div className="absolute right-[-12rem] top-[18rem] h-[26rem] w-[26rem] rounded-full bg-white/[0.03] blur-[160px]" />
+          <div className="absolute bottom-[-12rem] left-1/2 h-[32rem] w-[32rem] -translate-x-1/2 rounded-full bg-gold/[0.06] blur-[180px]" />
+        </div>
+
         <TenantProvider>
-          {children}
+          <div className="relative z-10">{children}</div>
         </TenantProvider>
       </body>
     </html>

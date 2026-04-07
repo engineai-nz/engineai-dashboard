@@ -1,6 +1,8 @@
 'use client'
 
 import React, { createContext, useContext, useState } from 'react'
+import Link from 'next/link'
+import { BookOpen } from 'lucide-react'
 import ManualOverride from '@/features/cockpit/ManualOverride'
 
 type SystemStatus = 'active' | 'paused' | 'terminated'
@@ -30,18 +32,22 @@ interface CockpitShellProps {
 }
 
 /**
- * The standard EngineAI cockpit chrome: top nav with brand, system
- * status, manual override, and an Initialise button. Wraps the HUD on
- * the home page (`/`) and every division page (`/division/[slug]`).
+ * The Engine AI cockpit chrome: top nav with brand wordmark, system
+ * status, manual override, and the Intelligence Hub jump-off. Wraps
+ * every cockpit route (home, division/[slug]).
  *
- * State (system override) lives in this component and is exposed to
- * descendants via React Context (`useCockpitShell`). The plain
- * `children: ReactNode` shape lets server components compose this
- * shell — render-prop style children would not survive the
- * server -> client boundary.
+ * State (system override) lives in this component and is exposed via
+ * React Context (`useCockpitShell`) so descendants can react to pause
+ * state without prop-drilling. The plain `children: ReactNode` shape
+ * lets server components compose this shell — render-prop children
+ * would not survive the server -> client boundary.
  *
- * Lives here (rather than in app/layout.tsx) because the /login route
- * intentionally renders bare without the cockpit chrome.
+ * Visual language: brand-aligned with engineai.co.nz.
+ * - Glass-pill top nav with backdrop-blur-2xl
+ * - Gold wordmark "EA" logo square
+ * - Mono JetBrains brand treatment with 0.16em tracking
+ * - Status indicators use semantic signal-live (green) / teal hover
+ * - Ambient atmosphere is inherited from root layout
  */
 export default function CockpitShell({ children }: CockpitShellProps) {
   const [systemStatus, setSystemStatus] = useState<SystemStatus>('active')
@@ -51,7 +57,6 @@ export default function CockpitShell({ children }: CockpitShellProps) {
     if (state !== 'active') {
       // eslint-disable-next-line no-console
       console.log(`SYSTEM: Executive Override Initiated - State: ${state.toUpperCase()}`)
-      // Real database logging via createLedgerTask will go here.
     }
   }
 
@@ -59,36 +64,66 @@ export default function CockpitShell({ children }: CockpitShellProps) {
 
   return (
     <CockpitShellContext.Provider value={{ systemStatus, isSystemPaused }}>
-      <div className="min-h-screen bg-background text-white/60 selection:bg-white selection:text-background">
-        <nav className="h-16 border-b border-white/10 flex items-center justify-between px-6 bg-background sticky top-0 z-50">
-          <div className="flex items-center gap-4">
-            <div className="w-8 h-8 bg-white/5 border border-white/10 flex items-center justify-center rounded-none">
-              <span className="text-white font-light font-mono">EA</span>
+      <div className="relative min-h-screen text-[#E8E6E1]">
+        {/* Sticky brand header */}
+        <nav className="relative z-40 border-b border-white/[0.07] bg-background/78 backdrop-blur-2xl">
+          <div className="mx-auto flex h-20 max-w-[92rem] items-center justify-between px-6 md:h-[5.25rem] lg:px-10">
+            {/* Left — brand wordmark */}
+            <div className="flex items-center gap-4">
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-[0.9rem] border border-gold/25 bg-gold/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_18px_rgba(196,163,90,0.12)]">
+                <span className="font-mono text-[13px] font-semibold uppercase tracking-[0.08em] text-gold">
+                  EA
+                </span>
+              </div>
+              <div className="hidden items-baseline gap-2 md:flex">
+                <span className="font-sans text-[1.05rem] font-semibold uppercase tracking-[0.16em] text-[#E8E6E1]">
+                  EngineAI
+                </span>
+                <span className="font-mono text-[11px] uppercase tracking-[0.3em] text-[#888]">OS</span>
+              </div>
             </div>
-            <span className="font-light font-mono tracking-tighter text-white uppercase">
-              EngineAI <span className="text-white/40 tracking-[0.1em] ml-1 font-mono">OS</span>
-            </span>
-          </div>
 
-          <div className="flex gap-6 items-center">
-            <div className="hidden md:flex gap-4">
-              <span
-                className={`text-[10px] font-mono uppercase transition-colors ${
-                  systemStatus !== 'active' ? 'text-white/60' : 'text-white/40'
-                }`}
-              >
-                System: {systemStatus.toUpperCase()}
+            {/* Centre — status readouts */}
+            <div className="hidden items-center gap-5 md:flex">
+              <div className="flex items-center gap-3 rounded-full border border-white/[0.08] bg-white/[0.02] px-4 py-2">
+                <span
+                  aria-hidden="true"
+                  className={`h-2 w-2 rounded-full transition-colors ${
+                    systemStatus === 'active'
+                      ? 'animate-pulse-signal bg-signal-live shadow-[0_0_12px_rgba(76,175,80,0.7)]'
+                      : systemStatus === 'paused'
+                        ? 'bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.7)]'
+                        : 'bg-signal-error shadow-[0_0_12px_rgba(239,68,68,0.7)]'
+                  }`}
+                />
+                <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-white">
+                  System: {systemStatus}
+                </span>
+              </div>
+              <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#888]">
+                Tenant: Executive
               </span>
-              <span className="text-[10px] font-mono text-white/40 uppercase">Tenant: Executive</span>
             </div>
 
-            <div className="h-8 w-[1px] bg-white/10 hidden md:block" />
+            {/* Right — actions */}
+            <div className="flex items-center gap-3">
+              <Link
+                href="/hub"
+                aria-label="Open Intelligence Hub"
+                className="group hidden items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.02] px-4 py-2 font-mono text-[11px] uppercase tracking-[0.2em] text-[#cec9c1] transition-all duration-300 hover:border-teal/30 hover:bg-teal/[0.04] hover:text-teal lg:inline-flex"
+              >
+                <BookOpen size={13} className="transition-colors group-hover:text-teal" />
+                Hub
+              </Link>
 
-            <ManualOverride onOverride={handleOverride} systemStatus={systemStatus} />
+              <ManualOverride onOverride={handleOverride} systemStatus={systemStatus} />
 
-            <button className="bg-white/5 border border-white/10 text-[10px] font-mono text-white px-3 py-1.5 hover:opacity-50 transition-opacity uppercase tracking-[0.1em] font-light rounded-none">
-              Initialise
-            </button>
+              <button
+                className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold px-5 py-2 font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-black transition duration-300 hover:-translate-y-0.5 hover:brightness-110"
+              >
+                Initialise
+              </button>
+            </div>
           </div>
         </nav>
 

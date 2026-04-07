@@ -68,16 +68,7 @@ export default function IntelligenceHub() {
   }, [intel, filter, search]);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background text-[#E8E6E1]">
-      {/* Ambient atmosphere layer — grid + noise + gold blobs */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="ambient-grid absolute inset-0 opacity-40" />
-        <div className="page-noise absolute inset-0 opacity-20" />
-        <div className="absolute left-[-10rem] top-[-8rem] h-[28rem] w-[28rem] rounded-full bg-gold/[0.10] blur-[140px]" />
-        <div className="absolute right-[-12rem] top-[18rem] h-[26rem] w-[26rem] rounded-full bg-white/[0.04] blur-[160px]" />
-        <div className="absolute bottom-[-12rem] left-1/2 h-[32rem] w-[32rem] -translate-x-1/2 rounded-full bg-gold/[0.08] blur-[180px]" />
-      </div>
-
+    <div className="relative min-h-screen text-[#E8E6E1]">
       {/* Top header — fixed, glass on scroll feel via liquid-glass background */}
       <header className="relative z-40 border-b border-white/[0.07] bg-background/78 backdrop-blur-2xl">
         <div className="mx-auto flex h-20 max-w-[92rem] items-center justify-between px-6 lg:px-10 md:h-24">
