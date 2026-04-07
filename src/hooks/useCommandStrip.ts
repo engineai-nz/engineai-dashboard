@@ -16,10 +16,22 @@ export const MAX_QUERY_LENGTH = 200;
 
 export type TriggerType = 'whatsapp' | 'telegram' | 'email';
 
+// Mirrors the subset of the v6 useChat message shape that CommandStrip.tsx
+// actually reads (id, role, content, toolInvocations). The scaffold never
+// populates toolInvocations — the field is typed loosely (any[]) because:
+//   1. The scaffold has no real tool-call source, so the array is always undefined.
+//   2. The consumer (CommandStrip.tsx:80) spreads result into typed
+//      ProjectStatusCard / FinancialMetricCard components, which the real
+//      v6 useChat would supply via its own loose typing. Pinning a strict
+//      shape here would introduce noise the real integration will fix anyway.
+// When the real useChat({ messages, sendMessage, status }) integration lands,
+// this whole interface should be replaced with the SDK's exported Message type.
 interface ScaffoldMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  toolInvocations?: any[];
 }
 
 export const useCommandStrip = ({ projectName = '', projectStage = '' }: UseCommandStripProps) => {
