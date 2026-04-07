@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { createNoOpSupabaseClient } from './supabase-noop'
 
 export async function createClient() {
   const cookieStore = await cookies()
@@ -7,12 +8,10 @@ export async function createClient() {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!url || !key) {
-    return createServerClient('https://placeholder.supabase.co', 'placeholder', {
-      cookies: {
-        getAll() { return [] },
-        setAll() {}
-      }
-    })
+    // No env vars => return a true no-op client. See supabase-noop.ts
+    // for the rationale (kills the placeholder.supabase.co fetch
+    // spam that the old fallback caused).
+    return createNoOpSupabaseClient()
   }
 
   return createServerClient(
