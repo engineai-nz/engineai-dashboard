@@ -1,0 +1,345 @@
+{
+  "document": {
+    "title": "Architecture Decision Document",
+    "path": "/home/duchats/projects/engineai_dashboard/architecture.md",
+    "type": "architecture",
+    "author": "Wardo",
+    "ai_generated": {
+      "detected": true,
+      "model": "Gemini (via BMAD pipeline)",
+      "evidence": [
+        "GEMINI.md listed as input in frontmatter",
+        "All five AI-generation signals present (buzzwords, symmetry, passive voice, no unknowns, self-validation)",
+        "Input artifacts referenced in frontmatter do not exist in repo",
+        "Self-grading validation section with all green checkmarks",
+        "Buzzword density exceeds the already-flagged PRD"
+      ]
+    }
+  },
+  "review": {
+    "version": 1,
+    "date": "2026-04-04",
+    "reviewers": ["claude", "codex"],
+    "verdict": "This document is labelled Architecture Decision Document but contains no decisions. It restates the PRD's technology choices with directory structure detail but zero alternatives evaluation, failure analysis, or cost modelling. Does not address any prior PRD review findings. Both reviewers converged: generated summary wearing an architecture costume."
+  },
+  "findings": [
+    {
+      "id": "F001",
+      "title": "This is not an ADR — no alternatives evaluation",
+      "category": "Architecture and Technology Fitness",
+      "severity": "P0",
+      "action_type": "rewrite",
+      "evidence": {
+        "section": "Core Architectural Decisions / Technical Constraints",
+        "line": 54,
+        "quote": "Vercel AI SDK v6: Mandatory for hierarchical agent loops"
+      },
+      "rationale": "An architecture without decision records cannot be challenged or evolved. Third time this has been flagged.",
+      "suggested_fix": "Write ADRs for each major technology choice with context, options evaluated, decision, and trade-offs accepted.",
+      "source": "both",
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "F002",
+      "title": "PRD P0 findings not addressed by architecture doc",
+      "category": "Internal Contradictions",
+      "severity": "P0",
+      "action_type": "decision_needed",
+      "evidence": {
+        "section": "Cross-reference",
+        "line": null,
+        "quote": "All six P0/P1 findings from adversarial-review-v1.md remain unresolved"
+      },
+      "rationale": "Writing an architecture doc that ignores the review of the PRD it's based on defeats the review process.",
+      "suggested_fix": "Explicitly address each prior P0/P1 finding: resolve, defer with rationale, or disagree with evidence.",
+      "source": "both",
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "F003",
+      "title": "Provisioning chain has no failure handling",
+      "category": "Edge Cases and Failure Modes",
+      "severity": "P0",
+      "action_type": "add_section",
+      "evidence": {
+        "section": "The BIAB Factory Reproduction Engine / Automated Provisioning Chain",
+        "line": 45,
+        "quote": "Step 1: GitHub API triggers a repo generation... Step 2: Supabase Management API provisions..."
+      },
+      "rationale": "4-step distributed transaction across 3 external APIs with no rollback, cleanup, idempotency, or retry strategy.",
+      "suggested_fix": "Wrap in saga pattern with compensating transactions. Track provisioning state. Add manual recovery path.",
+      "source": "both",
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "F004",
+      "title": "Self-validating architecture grades itself READY FOR IMPLEMENTATION",
+      "category": "AI-Generated Content Smell",
+      "severity": "P0",
+      "action_type": "rewrite",
+      "evidence": {
+        "section": "Architecture Validation Results",
+        "line": 257,
+        "quote": "Coherence Validation ✅ ... READY FOR IMPLEMENTATION / Confidence Level: HIGH"
+      },
+      "rationale": "A document that certifies itself is not trustworthy. Real validation requires external review and acknowledged risks.",
+      "suggested_fix": "Delete self-validation section. Replace with Risks and Open Questions.",
+      "source": "both",
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "F005",
+      "title": "Requirements coverage falsely claimed — FR15-20 and NFR9-11 silently dropped",
+      "category": "Internal Contradictions",
+      "severity": "P1",
+      "action_type": "resolve_contradiction",
+      "evidence": {
+        "section": "Requirements Coverage Validation",
+        "line": 260,
+        "quote": "Requirements Coverage Validation ✅ — but FR15-FR20 and NFR9-NFR11 absent"
+      },
+      "rationale": "Claiming full coverage while silently dropping 6 FRs and 3 NFRs makes the architecture untrustworthy as a traceability document.",
+      "suggested_fix": "Map FR15-20 and NFR9-11 to structure, or explicitly defer with rationale.",
+      "source": "codex",
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "F006",
+      "title": "Agent execution model still missing — org chart not execution protocol",
+      "category": "Architecture and Technology Fitness",
+      "severity": "P1",
+      "action_type": "add_section",
+      "evidence": {
+        "section": "Agentic Workforce",
+        "line": 217,
+        "quote": "ceo.ts, specialist.ts, sre.ts"
+      },
+      "rationale": "File locations are not an execution model. Missing: state machine, handoff envelope, ownership model, idempotency, retry semantics.",
+      "suggested_fix": "Define the agent execution protocol with state machine, message format, and sequence diagrams.",
+      "source": "both",
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "F007",
+      "title": "Total Isolation cost not evaluated against alternatives",
+      "category": "Architecture and Technology Fitness",
+      "severity": "P1",
+      "action_type": "decision_needed",
+      "evidence": {
+        "section": "Data Architecture & Provisioning",
+        "line": 99,
+        "quote": "Every Business in a Box instance receives a dedicated, isolated Supabase project"
+      },
+      "rationale": "50 separate Supabase projects = 50 Postgres instances, secret rotation overhead, migration fan-out, observability fragmentation.",
+      "suggested_fix": "Write ADR comparing: separate projects, shared-with-RLS, schema-per-tenant, hybrid by tier.",
+      "source": "both",
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "F008",
+      "title": "Vercel Edge for agent reasoning is questionable",
+      "category": "Architecture and Technology Fitness",
+      "severity": "P1",
+      "action_type": "decision_needed",
+      "evidence": {
+        "section": "Infrastructure & Deployment",
+        "line": 128,
+        "quote": "All agentic logic runs on Vercel Edge"
+      },
+      "rationale": "Edge has 25s response start, 300s stream cap, limited Node.js APIs. Vercel recommends Node.js over Edge for reliability. Agent reasoning is not a typical Edge workload.",
+      "suggested_fix": "Default to Node.js serverless for agent reasoning. Use Edge only where latency matters and workload fits.",
+      "source": "both",
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "F009",
+      "title": "No data model or database schema",
+      "category": "Missing Sections",
+      "severity": "P1",
+      "action_type": "add_section",
+      "evidence": {
+        "section": "Format Patterns / Intelligence Storage",
+        "line": 166,
+        "quote": "Flexible JSONB Knowledge Blob"
+      },
+      "rationale": "Multi-tenant system with agent state, workflow state, telemetry, and a 6-stage pipeline has no schema definition.",
+      "suggested_fix": "Add ER diagram and table definitions for core entities.",
+      "source": "claude",
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "F010",
+      "title": "Hybrid telemetry coordination undefined",
+      "category": "Architecture and Technology Fitness",
+      "severity": "P1",
+      "action_type": "add_section",
+      "evidence": {
+        "section": "API & Communication Patterns",
+        "line": 117,
+        "quote": "Hybrid Stream/Broadcast. Use AI SDK Data Streams for active reasoning and Supabase Realtime (Broadcast) for background status"
+      },
+      "rationale": "Two real-time channels pushing to the same UI with no coordination, authority, or reconnection strategy defined.",
+      "suggested_fix": "Define which channel owns which state, client-side reconciliation, and fallback behaviour.",
+      "source": "claude",
+      "confidence": "medium",
+      "status": "open"
+    },
+    {
+      "id": "F011",
+      "title": "No security threat model",
+      "category": "Missing Sections",
+      "severity": "P2",
+      "action_type": "add_section",
+      "evidence": {
+        "section": "Authentication & Security",
+        "line": 108,
+        "quote": "Supabase Auth (SSR Mode)"
+      },
+      "rationale": "Agents have GitHub write access, Supabase Management API access, and Vercel deployment access. Attack surface not analysed.",
+      "suggested_fix": "Add threat model covering agent privilege escalation, credential exposure, tenant data leakage, MCP trust.",
+      "source": "claude",
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "F012",
+      "title": "Internal naming contradictions between text and directory tree",
+      "category": "Internal Contradictions",
+      "severity": "P2",
+      "action_type": "resolve_contradiction",
+      "evidence": {
+        "section": "Structure Patterns vs Project Directory Structure",
+        "line": 153,
+        "quote": "features/industrial-cloner/ vs features/factory/ in tree"
+      },
+      "rationale": "Text and tree disagree on folder names, top-level structure, and where business logic lives.",
+      "suggested_fix": "Pick one naming scheme and make text match tree.",
+      "source": "codex",
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "F013",
+      "title": "No API contracts",
+      "category": "Missing Sections",
+      "severity": "P2",
+      "action_type": "add_section",
+      "evidence": {
+        "section": "Naming Patterns / API Naming",
+        "line": 143,
+        "quote": "/api/industrial-cloner/trigger"
+      },
+      "rationale": "Endpoint paths named but no request/response shapes, error codes, auth requirements, or rate limits.",
+      "suggested_fix": "Add API contract definitions for each endpoint.",
+      "source": "claude",
+      "confidence": "medium",
+      "status": "open"
+    },
+    {
+      "id": "F014",
+      "title": "No rollback or migration strategy",
+      "category": "Edge Cases and Failure Modes",
+      "severity": "P2",
+      "action_type": "add_section",
+      "evidence": {
+        "section": "Lifecycle Strategy",
+        "line": 102,
+        "quote": "Non-breaking Structural Patches are auto-applied via GitHub Actions"
+      },
+      "rationale": "Auto-applied patches with no rollback path. No version pinning per client. No canary strategy.",
+      "suggested_fix": "Add rollback mechanism, version pinning, and canary deployment strategy.",
+      "source": "claude",
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "F015",
+      "title": "No unknowns or open questions section",
+      "category": "Missing Sections",
+      "severity": "P2",
+      "action_type": "add_section",
+      "evidence": {
+        "section": "Entire document",
+        "line": null,
+        "quote": "No unknowns section exists"
+      },
+      "rationale": "Greenfield architecture with zero acknowledged unknowns is a red flag.",
+      "suggested_fix": "Add unknowns covering: model reliability, API stability, build time benchmarks, tenant scaling.",
+      "source": "both",
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "F016",
+      "title": "Buzzword density exceeds the PRD",
+      "category": "AI-Generated Content Smell",
+      "severity": "P3",
+      "action_type": "narrow_scope",
+      "evidence": {
+        "section": "Throughout",
+        "line": 60,
+        "quote": "Surgical Sovereignty, Glanceable Certainty, F1 HUD, Shift-Lights, Progressive Ribbon, Antigravity IDE, Deep-Link Portals"
+      },
+      "rationale": "Marketing terms in a document meant for implementers.",
+      "suggested_fix": "Pick one metaphor set and strip the rest.",
+      "source": "both",
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "F017",
+      "title": "Input artefacts referenced in frontmatter do not exist",
+      "category": "AI-Generated Content Smell",
+      "severity": "P3",
+      "action_type": "resolve_contradiction",
+      "evidence": {
+        "section": "Frontmatter",
+        "line": 4,
+        "quote": "_bmad-output/planning-artifacts/prd.md (and 4 other paths)"
+      },
+      "rationale": "Provenance trail is not credible. Lessons.md already flagged this pattern.",
+      "suggested_fix": "Remove or correct frontmatter references to reflect actual repo contents.",
+      "source": "both",
+      "confidence": "high",
+      "status": "open"
+    }
+  ],
+  "questions_for_author": [
+    "Was this architecture doc intended to be the ADR? The ADR is still listed as an open task in todo.md.",
+    "Which FRs are actually in Phase 1? The architecture hard-bakes BIAB cloning into the baseline, but the PRD Phase 1 is only Cockpit + CEO Agent.",
+    "Is the separate-Supabase-project-per-tenant decision final? What's the operational plan for 50+ projects?",
+    "What happened to FR15-20? Deferred, removed, or generation oversight?",
+    "Has the provisioning chain (GitHub -> Supabase -> Vercel) been prototyped?",
+    "What's the actual budget for Supabase and Vercel at 50 tenants?"
+  ],
+  "coverage_map": {
+    "ADR / alternatives evaluation": "missing",
+    "Data model / schema": "missing",
+    "Sequence diagrams": "missing",
+    "API contracts": "missing",
+    "Security threat model": "missing",
+    "Cost model": "missing",
+    "Failure taxonomy / rollback": "missing",
+    "Unknowns / assumptions": "missing",
+    "Phasing / MVP boundary": "missing",
+    "Agent execution model": "missing",
+    "Provisioning failure handling": "missing",
+    "Performance measurement plan": "missing",
+    "Project structure & naming": "strong",
+    "Feature-to-directory mapping": "strong",
+    "Technology version pinning": "weak",
+    "Auth pattern": "weak",
+    "Telemetry pattern": "weak",
+    "Requirements-to-structure mapping": "weak"
+  },
+  "disagreements": []
+}
