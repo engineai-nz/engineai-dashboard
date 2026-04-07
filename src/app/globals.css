@@ -1,64 +1,104 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-:root {
-  --background: 10 10 10; /* #0A0A0A */
-  --foreground: 232 230 225; /* #E8E6E1 */
-  --primary: 196 163 90; /* #C4A35A */
-  --surface: 17 17 17; /* #111111 */
-  --gold: 196 163 90;
+/* ============================================================
+   Engine AI design tokens — Tech Noir
+   Migrated from tailwind.config.ts (Tailwind 3) to Tailwind 4
+   @theme syntax during the Phase 1 reset (2026-04-07).
+   Source of truth: BRAND.md.
+   ============================================================ */
+
+@theme inline {
+  /* Background + surface */
+  --color-background: #0A0A0A;
+  --color-surface: #111111;
+  --color-card-bg: rgba(12, 12, 12, 0.84);
+
+  /* Gold — primary brand accent / destination state */
+  --color-gold: #C4A35A;
+  --color-gold-muted: rgba(196, 163, 90, 0.24);
+
+  /* Teal — secondary accent, hover / transient interaction */
+  --color-teal: #3CB5B5;
+  --color-teal-deep: #2B8C8C;
+
+  /* Status signals — semantic only, never decorative */
+  --color-signal-live: #4CAF50;
+  --color-signal-error: #EF4444;
+
+  /* Text */
+  --color-primary: #E8E6E1;
+  --color-primary-foreground: #0A0A0A;
+  --color-secondary: #888888;
+  --color-muted: #555555;
+  --color-muted-foreground: rgba(255, 255, 255, 0.04);
+  --color-foreground: #ffffff;
+  --color-border: rgba(255, 255, 255, 0.07);
+
+  /* Typography */
+  --font-sans: var(--font-inter), sans-serif;
+  --font-mono: var(--font-jetbrains-mono), monospace;
+
+  /* Radius */
+  --radius-none: 0px;
+  --radius-sm: 0.5rem;
+  --radius-md: 1.1rem;
+  --radius-lg: 1.75rem;
+  --radius-xl: 1.9rem;
+
+  /* Animation tokens */
+  --animate-pulse-gold: pulse-gold 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-pulse-signal: pulse-signal 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-fade-up: fade-up 0.8s ease-out forwards;
 }
 
-html {
-  scroll-behavior: smooth;
+@keyframes pulse-gold {
+  0%, 100% { opacity: 1; border-color: rgba(196, 163, 90, 0.4); }
+  50% { opacity: 0.5; border-color: rgba(196, 163, 90, 0.1); }
 }
+
+@keyframes pulse-signal {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.85); }
+}
+
+@keyframes fade-up {
+  0% { opacity: 0; transform: translateY(1.5rem); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   Engine AI atmospherics + visual primitives
+   Preserved verbatim from the PR #18 brand work.
+   ============================================================ */
+
+html { scroll-behavior: smooth; }
 
 body {
   background: linear-gradient(145deg, #080808 0%, #0f0f0f 40%, #0a0a0a 100%);
-  color: rgb(var(--foreground));
+  color: #E8E6E1;
   min-height: 100vh;
   position: relative;
+  font-family: var(--font-sans);
 }
 
-/* Brand selection — gold-tinted per BRAND.md */
 ::selection {
   background: rgba(196, 163, 90, 0.25);
   color: #fff;
 }
 
-/* Brand scrollbar */
-::-webkit-scrollbar {
-  width: 5px;
-}
-::-webkit-scrollbar-track {
-  background: #0A0A0A;
-}
-::-webkit-scrollbar-thumb {
-  background: #2A2A2A;
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #444;
-}
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: #0A0A0A; }
+::-webkit-scrollbar-thumb { background: #2A2A2A; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #444; }
 
-/* Hero animations — play on page load */
 @keyframes heroFadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(24px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes heroFadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
@@ -68,12 +108,10 @@ body {
   opacity: 0;
   animation: heroFadeIn 0.8s ease-out forwards;
 }
-
 .hero-fade-up {
   opacity: 0;
   animation: heroFadeUp 0.9s ease-out forwards;
 }
-
 .hero-delay-1 { animation-delay: 0.1s; }
 .hero-delay-2 { animation-delay: 0.3s; }
 .hero-delay-3 { animation-delay: 0.5s; }
@@ -83,7 +121,6 @@ body {
   animation: float 4s ease-in-out infinite;
 }
 
-/* Atmosphere layers — apply as absolute children of a relative parent */
 .ambient-grid {
   background-image:
     linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
@@ -102,7 +139,6 @@ body {
   mix-blend-mode: soft-light;
 }
 
-/* Liquid glass — the dominant Engine AI surface */
 .liquid-glass {
   position: relative;
   overflow: hidden;
@@ -148,11 +184,9 @@ body {
 }
 
 .mono {
-  font-family: var(--font-jetbrains-mono), monospace;
+  font-family: var(--font-mono);
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+@utility text-balance {
+  text-wrap: balance;
 }
