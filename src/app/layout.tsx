@@ -30,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
-      <body className="antialiased bg-background text-foreground selection:bg-primary selection:text-primary-foreground">
+      <body className="antialiased bg-background text-foreground">
         <TenantProvider>
           {children}
         </TenantProvider>

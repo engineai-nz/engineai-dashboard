@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react';
-import { Database, Plus, Inbox, TrendingUp } from 'lucide-react';
+import { Plus, Inbox } from 'lucide-react';
 import { IntelCategory } from '@/lib/hub-data';
 
 interface CuratorSidebarProps {
@@ -9,60 +9,91 @@ interface CuratorSidebarProps {
   onCategoryChange: (cat: IntelCategory | 'all') => void;
 }
 
-const CuratorSidebar: React.FC<CuratorSidebarProps> = ({ activeCategory, onCategoryChange }) => {
-  const categories: (IntelCategory | 'all')[] = ['all', 'technical', 'market', 'industry', 'modular'];
+const CATEGORIES: (IntelCategory | 'all')[] = ['all', 'technical', 'market', 'industry', 'modular'];
 
+const CuratorSidebar: React.FC<CuratorSidebarProps> = ({ activeCategory, onCategoryChange }) => {
   return (
-    <aside className="hidden lg:flex w-72 border-r border-white/10 bg-surface/40 flex-col font-mono h-auto">
-      <div className="p-6 space-y-8">
+    <aside className="hidden w-72 shrink-0 border-r border-white/[0.05] py-12 pl-6 pr-8 lg:block">
+      <div className="space-y-12">
+        {/* Ingestion CTA — gold liquid-glass pill */}
         <section>
-          <p className="text-[10px] text-white/40 uppercase tracking-[0.3em] mb-4">Ingestion Stream</p>
+          <div className="mb-5 flex items-center gap-3">
+            <span className="font-mono text-[10px] uppercase tracking-[0.34em] text-[#888]">
+              Ingestion
+            </span>
+            <span className="h-px flex-1 bg-white/[0.07]" />
+          </div>
           <button
             aria-label="Add new industrial intel"
-            className="w-full bg-gold/5 border border-gold/20 p-3 flex items-center justify-between group hover:bg-gold/10 hover:border-gold/40 transition-all rounded-none"
+            className="liquid-glass liquid-glass-gold group w-full rounded-full px-5 py-3 transition-all duration-300 hover:-translate-y-0.5"
           >
-            <span className="text-[10px] text-gold uppercase font-light tracking-[0.1em]">New Industrial Intel</span>
-            <Plus size={14} className="text-gold" />
+            <span className="relative z-[1] flex items-center justify-between">
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-white">
+                New Industrial Intel
+              </span>
+              <Plus size={13} className="text-gold transition-transform group-hover:rotate-90" />
+            </span>
           </button>
         </section>
 
-        <section className="space-y-4">
-          <p className="text-[10px] text-white/40 uppercase tracking-[0.3em]">Knowledge Base</p>
-          <div className="space-y-1">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => onCategoryChange(cat)}
-                className={`w-full flex items-center gap-3 p-2 transition-colors group rounded-none border ${
-                  activeCategory === cat
-                    ? 'bg-gold/10 text-gold border-gold/30'
-                    : 'text-white/40 hover:text-white hover:bg-white/5 border-transparent'
-                }`}
-              >
-                <Inbox size={14} className={activeCategory === cat ? 'text-gold' : 'text-white/30 group-hover:text-gold/70'} />
-                <span className="text-[10px] uppercase font-light tracking-[0.2em]">{cat}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-
+        {/* Category filters — pill nav, marketing pattern */}
         <section>
-          <p className="text-[10px] text-white/40 uppercase tracking-[0.3em] mb-4">System Pulse</p>
-          <div className="bg-background/40 border border-white/10 p-4 rounded-none space-y-3">
-            <div>
-              <p className="text-[8px] text-white/30 uppercase mb-1 tracking-[0.1em]">Vector Store</p>
-              <p className="text-[10px] text-gold font-light uppercase tracking-[0.1em]">Initialised</p>
+          <div className="mb-5 flex items-center gap-3">
+            <span className="font-mono text-[10px] uppercase tracking-[0.34em] text-[#888]">
+              Knowledge Base
+            </span>
+            <span className="h-px flex-1 bg-white/[0.07]" />
+          </div>
+          <div className="space-y-2">
+            {CATEGORIES.map((cat) => {
+              const isActive = activeCategory === cat;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => onCategoryChange(cat)}
+                  className={`group flex w-full items-center gap-3 rounded-full border px-4 py-2.5 font-mono text-[11px] uppercase tracking-[0.2em] transition-all duration-300 ${
+                    isActive
+                      ? 'border-gold/30 bg-gold/[0.08] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_18px_rgba(196,163,90,0.10)]'
+                      : 'border-white/[0.06] bg-black/20 text-[#cec9c1] hover:border-gold/15 hover:text-white'
+                  }`}
+                >
+                  <Inbox size={12} className={isActive ? 'text-gold' : 'text-white/30 group-hover:text-gold/70'} />
+                  <span>{cat}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* System pulse — small liquid-glass card */}
+        <section>
+          <div className="mb-5 flex items-center gap-3">
+            <span className="font-mono text-[10px] uppercase tracking-[0.34em] text-[#888]">
+              System Pulse
+            </span>
+            <span className="h-px flex-1 bg-white/[0.07]" />
+          </div>
+          <div className="liquid-glass relative space-y-4 rounded-[1.4rem] px-5 py-5">
+            <div className="relative z-[1]">
+              <p className="font-mono text-[9px] uppercase tracking-[0.26em] text-[#888]">Vector Store</p>
+              <p className="mt-1 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-white">
+                <span className="h-2 w-2 rounded-full bg-gold shadow-[0_0_12px_rgba(196,163,90,0.7)]" />
+                Initialised
+              </p>
             </div>
-            <div>
-              <p className="text-[8px] text-white/30 uppercase mb-1 tracking-[0.1em]">RAG Context</p>
-              <p className="text-[10px] text-white/70 font-light uppercase tracking-[0.1em]">Active</p>
+            <div className="relative z-[1]">
+              <p className="font-mono text-[9px] uppercase tracking-[0.26em] text-[#888]">RAG Context</p>
+              <p className="mt-1 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-white/80">
+                <span className="h-2 w-2 rounded-full bg-white/60" />
+                Active
+              </p>
             </div>
           </div>
         </section>
-      </div>
 
-      <div className="mt-auto p-6 border-t border-white/10 text-center">
-        <p className="text-[8px] text-white/20 uppercase tracking-[0.2em] italic">Optimising knowledge density...</p>
+        <p className="font-mono text-[9px] uppercase tracking-[0.26em] italic text-white/20">
+          Optimising knowledge density...
+        </p>
       </div>
     </aside>
   );
