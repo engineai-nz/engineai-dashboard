@@ -9,7 +9,7 @@ interface DecisionCardProps {
   onClick: () => void;
 }
 
-const DecisionCard: React.FC<DecisionCardProps> = ({ rationale, agent_role, task_title, onClick }) => {
+const DecisionCard: React.FC<DecisionCardProps> = ({ rationale, agentRole, taskTitle, onClick }) => {
   return (
     <motion.button
       whileHover={{ scale: 1.01 }}
@@ -25,14 +25,14 @@ const DecisionCard: React.FC<DecisionCardProps> = ({ rationale, agent_role, task
 
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-center mb-2">
-          <p className="text-[10px] font-mono text-gold/60 uppercase tracking-widest">{agent_role} Rationale</p>
+          <p className="text-[10px] font-mono text-gold/60 uppercase tracking-widest">{agentRole} Rationale</p>
           <span className="text-[8px] font-mono text-secondary/40 uppercase">Click to Drill-down</span>
         </div>
         <h3 className="text-lg font-light text-white tracking-tight leading-snug mb-1 line-clamp-3">
           {rationale || 'Analysing strategic variables...'}
         </h3>
         <p className="text-[10px] font-mono text-secondary uppercase truncate">
-          Context: {task_title}
+          Context: {taskTitle}
         </p>
       </div>
 
