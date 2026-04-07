@@ -5,6 +5,7 @@
  * never @supabase/supabase-js directly.
  */
 
+import 'server-only';
 import { getSupabaseServiceClient } from '@/lib/supabase/server';
 
 export type RunStatus = 'pending' | 'running' | 'complete' | 'failed';
@@ -42,10 +43,45 @@ export type ArtifactRow = {
   created_at: string;
 };
 
+/**
+ * Tenant ownership guard. Phase 1a uses service-role + app-layer filtering;
+ * the schema's foreign keys are tenant-blind, so a buggy or malicious caller
+ * could otherwise insert a child row pointing at a parent that belongs to a
+ * different tenant. These checks are the app-layer fence until Phase 1.5
+ * adds composite tenant-aware FKs at the schema level.
+ */
+async function assertParentTenant(input: {
+  table: 'projects' | 'runs';
+  parentId: string;
+  expectedTenantId: string;
+}): Promise<void> {
+  const supabase = getSupabaseServiceClient();
+  const { data, error } = await supabase
+    .from(input.table)
+    .select('tenant_id')
+    .eq('id', input.parentId)
+    .single();
+  if (error || !data) {
+    throw new Error(
+      `[db/runs] tenant ownership check failed: ${input.table}/${input.parentId} not found`,
+    );
+  }
+  if ((data as { tenant_id: string }).tenant_id !== input.expectedTenantId) {
+    throw new Error(
+      `[db/runs] tenant ownership violation: ${input.table}/${input.parentId} belongs to a different tenant`,
+    );
+  }
+}
+
 export async function createRun(input: {
   projectId: string;
   tenantId: string;
 }): Promise<RunRow> {
+  await assertParentTenant({
+    table: 'projects',
+    parentId: input.projectId,
+    expectedTenantId: input.tenantId,
+  });
   const supabase = getSupabaseServiceClient();
   const { data, error } = await supabase
     .from('runs')
@@ -72,6 +108,11 @@ export async function appendRunStep(input: {
   tokensIn?: number;
   tokensOut?: number;
 }): Promise<RunStepRow> {
+  await assertParentTenant({
+    table: 'runs',
+    parentId: input.runId,
+    expectedTenantId: input.tenantId,
+  });
   const supabase = getSupabaseServiceClient();
   const { data, error } = await supabase
     .from('run_steps')
@@ -102,6 +143,11 @@ export async function saveArtifact(input: {
   kind: string;
   contentMarkdown: string;
 }): Promise<ArtifactRow> {
+  await assertParentTenant({
+    table: 'runs',
+    parentId: input.runId,
+    expectedTenantId: input.tenantId,
+  });
   const supabase = getSupabaseServiceClient();
   const { data, error } = await supabase
     .from('artifacts')

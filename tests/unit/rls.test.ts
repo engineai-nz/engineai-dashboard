@@ -95,4 +95,18 @@ d('phase 1a RLS isolation', () => {
     expect(data?.length).toBe(1);
     expect(data?.[0].id).toBe(projectId);
   });
+
+  // The header of this file claims RLS coverage on ALL FOUR tables.
+  // Codex review caught the overclaim — the original tests only exercised
+  // `projects`. These four loops close that gap so any future grant or
+  // policy mistake on runs/run_steps/artifacts is caught immediately.
+  it('anon client cannot read any of the four read-model tables', async () => {
+    const tables = ['projects', 'runs', 'run_steps', 'artifacts'] as const;
+    for (const table of tables) {
+      const { data, error } = await anon.from(table).select('*').limit(1);
+      // RLS denial returns empty data (not an error) for the anon role.
+      expect(error, `${table} should not error on read`).toBeNull();
+      expect(data, `${table} anon read should be empty`).toEqual([]);
+    }
+  });
 });

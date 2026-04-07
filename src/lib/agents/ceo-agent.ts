@@ -31,6 +31,7 @@ import {
   type ArtifactRow,
 } from '@/lib/db/runs';
 import { HandoffEnvelopeSchema } from '@/lib/schemas/handoff-envelope';
+import { sanitiseError } from '@/lib/cockpit/sanitize-error';
 
 export type CeoRunResult = {
   run: RunRow;
@@ -90,7 +91,14 @@ export async function runCeoPipeline(input: {
       tenantId: input.tenantId,
       stepName: 'drafting',
       inputJson: { handoff: envelope },
-      outputJson: { length: prdMarkdown.length },
+      // Persist the actual PRD markdown in the step output so the audit
+      // view's drill-down shows the agent's real output, not just metadata.
+      // The same content is also persisted as an artifact below — that is
+      // the canonical store; this copy is for the run trace.
+      outputJson: {
+        prd_markdown: prdMarkdown,
+        length: prdMarkdown.length,
+      },
       status: 'complete',
     });
 
@@ -106,12 +114,15 @@ export async function runCeoPipeline(input: {
 
     return { run, artifact };
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    // Sanitise: log full error server-side, persist + rethrow only the
+    // generic category. runs.error is rendered to the browser at the
+    // drill-down, so it must not contain raw infra/provider strings.
+    const sanitised = sanitiseError(err);
     await markRunFailed({
       runId: run.id,
       tenantId: input.tenantId,
-      error: message,
+      error: `[${sanitised.code}] ${sanitised.message}`,
     });
-    throw err;
+    throw new Error(`[${sanitised.code}] ${sanitised.message}`);
   }
 }

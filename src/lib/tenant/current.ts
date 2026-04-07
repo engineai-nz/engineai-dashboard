@@ -8,6 +8,7 @@
  * Server-only. Never import from a client component.
  */
 
+import 'server-only';
 import { DEV_TENANT_ID, assertDevTenantAllowed } from './dev';
 
 export function getCurrentTenantId(): string {

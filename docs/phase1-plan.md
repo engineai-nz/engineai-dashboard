@@ -162,7 +162,7 @@ supabase/
 
 ### Model choice
 
-**Default: Claude Sonnet 4.6 (`claude-sonnet-4-6`) via `@ai-sdk/anthropic`.** Runtime is agent-agnostic via the Vercel AI SDK — swappable per-agent in one line. Reasoning: paid-in-blood lesson that Gemini Flash output was structurally plausible / semantically broken on the prior tree. Sonnet 4.6 is the lower-risk default for the first working CEO loop.
+**Provider-agnostic by design.** Agents resolve their model via `src/lib/agents/model.ts`, which reads `LLM_PROVIDER` + `LLM_MODEL` from env. Phase 1a default is `anthropic` / `claude-sonnet-4-5` (the version actually shipping in `@ai-sdk/anthropic` at the time of writing — bump as new releases land). Swapping providers (OpenAI, OpenRouter, Groq, Ollama, a local model) is one switch case in `model.ts` plus an env flip — no agent code changes. Reasoning: Claude is expensive and not the only option; Phase 1a should not lock the agent layer to a vendor. Decisions doc already calls the runtime "agent-agnostic via the AI SDK" — `model.ts` is how that's enforced.
 
 ### Step 2 — Cockpit shell *(~2 hours)*
 

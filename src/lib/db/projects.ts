@@ -7,6 +7,7 @@
  * smallest form: the agent never sees the service-role key.
  */
 
+import 'server-only';
 import { getSupabaseServiceClient } from '@/lib/supabase/server';
 
 export type ProjectStatus = 'pending' | 'running' | 'complete' | 'failed';

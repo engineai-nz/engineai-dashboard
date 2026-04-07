@@ -18,6 +18,7 @@ import { z } from 'zod';
 import { createProject } from '@/lib/db/projects';
 import { runCeoPipeline } from '@/lib/agents/ceo-agent';
 import { getCurrentTenantId } from '@/lib/tenant/current';
+import { sanitiseError } from '@/lib/cockpit/sanitize-error';
 
 const KNOWN_DIVISIONS = ['biab', 'skunkworks', 'modular', 'desktop'] as const;
 
@@ -66,9 +67,17 @@ export async function POST(req: Request) {
       artifact_id: result.artifact.id,
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    // The CEO pipeline already sanitised the error before throwing, but
+    // pass it through sanitiseError again so any error originating outside
+    // the pipeline (e.g. createProject failure path that would otherwise
+    // never reach here) is still safe.
+    const sanitised = sanitiseError(err);
     return NextResponse.json(
-      { project_id: project.id, error: message },
+      {
+        project_id: project.id,
+        error_code: sanitised.code,
+        error: sanitised.message,
+      },
       { status: 500 },
     );
   }
