@@ -1,7 +1,9 @@
 'use client'
 
 import React, { useRef, useEffect } from 'react';
-import { Mic, Send, Terminal, MessageCircle, Mail, MoreVertical, X, Sparkles } from 'lucide-react';
+import { Send, Terminal, MessageCircle, Mail, MoreVertical, X, Sparkles } from 'lucide-react';
+
+type TriggerId = 'whatsapp' | 'telegram' | 'email';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCommandStrip, MAX_QUERY_LENGTH } from '@/hooks/useCommandStrip';
 import ProjectStatusCard from '@/components/telemetry-cards/ProjectStatusCard';
@@ -16,16 +18,13 @@ const CommandStrip: React.FC<CommandStripProps> = ({ projectName = '', projectSt
   const {
     query,
     setQuery,
-    isRecording,
     isProcessing,
     messages,
     showTriggers,
-    safeProjectName,
     handleSend,
     handleTrigger,
-    toggleRecording,
     toggleTriggers,
-    clearMessages
+    clearMessages,
   } = useCommandStrip({ projectName, projectStage });
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -45,75 +44,112 @@ const CommandStrip: React.FC<CommandStripProps> = ({ projectName = '', projectSt
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="max-h-[60vh] overflow-y-auto bg-background/95 backdrop-blur-3xl border-t border-white/[0.07] px-4 py-6 custom-scrollbar"
+            className="custom-scrollbar max-h-[60vh] overflow-y-auto border-t border-white/[0.07] bg-background/92 px-6 py-8 backdrop-blur-3xl"
             ref={scrollRef}
           >
-            <div className="max-w-xl mx-auto space-y-6 pb-4">
-              <div className="flex justify-between items-center border-b border-white/5 pb-2 mb-4">
-                <div className="flex items-center gap-2">
-                  <Sparkles size={12} className="text-gold" />
-                  <span className="text-[10px] font-mono text-gold uppercase tracking-[0.2em]">Executive Intelligence Sync</span>
+            <div className="mx-auto max-w-2xl space-y-6 pb-4">
+              <div className="mb-4 flex items-center justify-between border-b border-white/[0.05] pb-3">
+                <div className="flex items-center gap-2.5">
+                  <Sparkles size={13} className="text-gold" />
+                  <span className="font-mono text-[11px] uppercase tracking-[0.26em] text-gold">
+                    Executive Intelligence Sync
+                  </span>
                 </div>
-                <button 
+                <button
                   onClick={clearMessages}
-                  className="text-secondary/40 hover:text-white p-1"
+                  aria-label="Clear transcript"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.02] text-[#cec9c1] transition-all duration-300 hover:border-teal/30 hover:text-teal"
                 >
-                  <X size={14} />
+                  <X size={13} />
                 </button>
               </div>
 
-              {messages.map((m) => (
+              {messages.map((m) => {
+                // v6 UIMessage: concatenate all text parts for display
+                const textContent = m.parts
+                  .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+                  .map((p) => p.text)
+                  .join('');
+
+                return (
                 <div key={m.id} className={`flex flex-col gap-2 ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
                   {m.role === 'user' ? (
-                    <div className="bg-white/5 border border-white/10 px-3 py-2 rounded-2xl rounded-tr-none max-w-[85%]">
-                      <p className="text-xs text-white/80 font-sans">{m.content}</p>
+                    <div className="max-w-[85%] rounded-[1.2rem] rounded-tr-md border border-white/[0.08] bg-white/[0.03] px-4 py-3">
+                      <p className="font-sans text-[13px] leading-6 text-white/85">{textContent}</p>
                     </div>
                   ) : (
-                    <div className="space-y-4 w-full">
-                      {m.content && (
-                        <div className="bg-gold/5 border border-gold/10 px-3 py-2 rounded-2xl rounded-tl-none max-w-[90%]">
-                          <p className="text-xs text-gold/90 font-mono leading-relaxed">{m.content}</p>
+                    <div className="w-full space-y-4">
+                      {textContent && (
+                        <div className="max-w-[90%] rounded-[1.2rem] rounded-tl-md border border-gold/20 bg-[linear-gradient(180deg,rgba(196,163,90,0.08),rgba(12,12,12,0.85))] px-4 py-3">
+                          <p className="font-mono text-[12px] leading-[1.6] text-gold/95">{textContent}</p>
                         </div>
                       )}
-                      
-                      {/* Generative UI Cards from Tool Invocations/Results */}
-                      {m.toolInvocations?.map((toolInvocation) => {
-                        const { toolName, toolCallId, state } = toolInvocation;
 
-                        if (state === 'result') {
-                          const { result } = toolInvocation;
-                          if (toolName === 'getProjectStatus' && !result.error) {
-                            return <ProjectStatusCard key={toolCallId} {...result} />;
+                      {/* Generative UI cards from tool parts (v6: type `tool-<name>`) */}
+                      {m.parts.map((part, idx) => {
+                        if (!part.type.startsWith('tool-')) return null;
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        const p = part as any;
+                        const toolName = part.type.slice(5);
+                        const key = p.toolCallId ?? `${m.id}-${idx}`;
+
+                        if (p.state === 'output-available') {
+                          const result = p.output;
+                          if (toolName === 'getProjectStatus' && !result?.error) {
+                            return <ProjectStatusCard key={key} {...result} />;
                           }
-                          if (toolName === 'getFinancialMetrics' && !result.error) {
-                            return <FinancialMetricCard key={toolCallId} {...result} />;
+                          if (toolName === 'getFinancialMetrics' && !result?.error) {
+                            return <FinancialMetricCard key={key} {...result} />;
                           }
-                          if (result.error) {
+                          if (result?.error) {
                             return (
-                              <div key={toolCallId} className="p-3 border border-red-500/20 bg-red-500/5 text-[10px] font-mono text-red-400 uppercase">
-                                ERROR: {result.error}
+                              <div
+                                key={key}
+                                className="rounded-[1rem] border border-signal-error/25 bg-signal-error/[0.06] px-4 py-3 font-mono text-[10px] uppercase tracking-[0.22em] text-signal-error"
+                              >
+                                ERROR &middot; {result.error}
                               </div>
                             );
                           }
-                        } else {
+                          return null;
+                        }
+
+                        if (p.state === 'output-error') {
                           return (
-                            <div key={toolCallId} className="flex items-center gap-2 text-[10px] font-mono text-gold/40 animate-pulse uppercase">
-                              <Terminal size={12} />
-                              Executing {toolName}...
+                            <div
+                              key={key}
+                              className="rounded-[1rem] border border-signal-error/25 bg-signal-error/[0.06] px-4 py-3 font-mono text-[10px] uppercase tracking-[0.22em] text-signal-error"
+                            >
+                              ERROR &middot; {p.errorText}
                             </div>
                           );
                         }
-                        return null;
+
+                        return (
+                          <div
+                            key={key}
+                            className="flex animate-pulse items-center gap-2.5 font-mono text-[10px] uppercase tracking-[0.22em] text-gold/50"
+                          >
+                            <Terminal size={12} />
+                            Executing {toolName}...
+                          </div>
+                        );
                       })}
                     </div>
                   )}
                 </div>
-              ))}
-              
-              {isProcessing && !messages[messages.length-1]?.content && (
-                <div className="flex items-center gap-3 text-gold/40 animate-pulse">
-                  <div className="w-1.5 h-1.5 rounded-full bg-gold" />
-                  <span className="text-[10px] font-mono uppercase tracking-[0.2em]">Agent Thinking...</span>
+                );
+              })}
+
+              {isProcessing && !messages[messages.length - 1]?.parts.some((p) => p.type === 'text') && (
+                <div className="flex animate-pulse items-center gap-3 text-gold/60">
+                  <span
+                    aria-hidden="true"
+                    className="h-1.5 w-1.5 rounded-full bg-gold shadow-[0_0_10px_rgba(196,163,90,0.65)]"
+                  />
+                  <span className="font-mono text-[10px] uppercase tracking-[0.26em]">
+                    Agent thinking...
+                  </span>
                 </div>
               )}
             </div>
@@ -121,61 +157,67 @@ const CommandStrip: React.FC<CommandStripProps> = ({ projectName = '', projectSt
         )}
       </AnimatePresence>
 
-      <div className="bg-background/80 backdrop-blur-2xl border-t border-white/[0.07] p-4">
-        <div className="max-w-2xl mx-auto flex flex-col gap-4">
-          
-          <form onSubmit={handleSend} className="flex items-center gap-2 w-full" role="search">
+      <div className="border-t border-white/[0.07] bg-background/85 px-5 py-5 backdrop-blur-2xl">
+        <div className="mx-auto flex max-w-2xl flex-col gap-4">
+          <form onSubmit={handleSend} className="flex items-center gap-3" role="search">
             <button
               type="button"
               onClick={toggleTriggers}
-              className={`p-3 rounded-full border transition-all ${
-                showTriggers ? 'bg-gold text-black border-gold' : 'bg-white/[0.02] border-white/[0.07] text-secondary'
+              aria-label="Toggle trigger shortcuts"
+              className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-all duration-300 ${
+                showTriggers
+                  ? 'border-gold/30 bg-gold/[0.08] text-gold shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
+                  : 'border-white/[0.08] bg-white/[0.02] text-[#cec9c1] hover:border-teal/30 hover:bg-teal/[0.04] hover:text-teal'
               }`}
             >
-              <MoreVertical size={20} />
+              <MoreVertical size={17} />
             </button>
 
-            <div className="flex-1 relative">
+            <div className="relative flex-1">
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder={isProcessing ? "SYNCING..." : "QUERY EXECUTIVE AGENT..."}
+                placeholder={isProcessing ? 'Syncing...' : 'Query executive agent...'}
                 disabled={isProcessing}
-                className="w-full bg-white/[0.03] border border-white/10 p-3.5 px-5 text-white focus:border-gold/40 focus:ring-1 focus:ring-gold/20 outline-none transition-all font-mono text-xs uppercase tracking-wider rounded-full placeholder:text-secondary/30"
+                aria-label="Command query"
+                className="w-full rounded-full border border-white/[0.08] bg-white/[0.02] px-5 py-3 font-mono text-[12px] uppercase tracking-[0.18em] text-white placeholder:text-white/25 outline-none transition-all focus:border-gold/40 focus:ring-1 focus:ring-gold/20 disabled:opacity-40"
               />
             </div>
 
             <button
               type="submit"
               disabled={isProcessing || !query.trim()}
-              className="p-3.5 bg-gold text-black rounded-full disabled:opacity-30 transition-all active:scale-95 shadow-[0_0_20px_rgba(196,163,90,0.2)]"
+              aria-label="Send query"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-gold/30 bg-gold text-black shadow-[0_0_24px_rgba(196,163,90,0.25)] transition-all duration-300 hover:-translate-y-0.5 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:translate-y-0 disabled:hover:brightness-100"
             >
-              <Send size={20} />
+              <Send size={17} />
             </button>
           </form>
 
-          {/* Mobile Shortcut Drawer */}
+          {/* Trigger shortcuts — three-tier hover with semantic icon colours */}
           <AnimatePresence>
             {showTriggers && (
-              <motion.nav 
+              <motion.nav
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 20, opacity: 0 }}
-                className="grid grid-cols-3 gap-2"
+                className="grid grid-cols-3 gap-3"
               >
                 {[
-                  { id: 'whatsapp', icon: MessageCircle, label: 'WhatsApp', color: 'text-emerald-400' },
-                  { id: 'telegram', icon: Send, label: 'Telegram', color: 'text-sky-400' },
-                  { id: 'email', icon: Mail, label: 'Email', color: 'text-amber-400' }
+                  { id: 'whatsapp' as const, icon: MessageCircle, label: 'WhatsApp', iconTone: 'text-signal-live' },
+                  { id: 'telegram' as const, icon: Send, label: 'Telegram', iconTone: 'text-teal' },
+                  { id: 'email' as const, icon: Mail, label: 'Email', iconTone: 'text-gold' },
                 ].map((trigger) => (
-                  <button 
+                  <button
                     key={trigger.id}
-                    onClick={() => handleTrigger(trigger.id as any)}
-                    className="flex flex-col items-center justify-center gap-2 bg-white/[0.02] border border-white/[0.07] p-4 rounded-2xl hover:bg-white/[0.05] transition-colors"
+                    onClick={() => handleTrigger(trigger.id as TriggerId)}
+                    className="group flex flex-col items-center justify-center gap-2 rounded-[1.2rem] border border-white/[0.08] bg-white/[0.02] p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-teal/25 hover:bg-teal/[0.04]"
                   >
-                    <trigger.icon size={24} className={trigger.color} />
-                    <span className="text-[10px] font-mono text-secondary uppercase tracking-widest">{trigger.label}</span>
+                    <trigger.icon size={22} className={`${trigger.iconTone} transition-transform group-hover:scale-105`} />
+                    <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#888] group-hover:text-white">
+                      {trigger.label}
+                    </span>
                   </button>
                 ))}
               </motion.nav>

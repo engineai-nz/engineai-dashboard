@@ -72,45 +72,45 @@ const ProgressiveRibbon: React.FC<ProgressiveRibbonProps> = ({
 
             return (
               <div key={stage.id} className="flex flex-col items-center justify-center gap-3 px-2">
-                <button 
+                <button
                   onClick={() => onToggleLock?.(stage.id)}
                   aria-label={isLocked ? `Unlock ${stage.label}` : `Lock ${stage.label} for manual intervention`}
-                  className="relative group transition-opacity hover:opacity-80 active:scale-95 outline-none"
+                  className="group relative outline-none transition-opacity hover:opacity-80 active:scale-95"
                 >
-                  {/* Node Visualization */}
+                  {/* Node — rotated square, brand-tinted by state */}
                   <motion.div
-                    className={`w-3.5 h-3.5 rounded-sm rotate-45 border transition-all duration-500 ${
-                      isLocked 
-                        ? 'bg-red-500 border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.4)]'
-                        : isActive 
-                        ? 'bg-gold border-gold shadow-[0_0_20px_rgba(196,163,90,0.6)]' 
-                        : isCompleted 
-                        ? 'bg-gold/60 border-gold/40' 
-                        : 'bg-[#0A0A0A] border-white/20'
+                    className={`h-3.5 w-3.5 rotate-45 rounded-[2px] border transition-all duration-500 ${
+                      isLocked
+                        ? 'border-signal-error bg-signal-error shadow-[0_0_18px_rgba(239,68,68,0.55)]'
+                        : isActive
+                          ? 'border-gold bg-gold shadow-[0_0_22px_rgba(196,163,90,0.7)]'
+                          : isCompleted
+                            ? 'border-gold/50 bg-gold/60'
+                            : 'border-white/25 bg-background'
                     }`}
-                    animate={isActive && !isLocked ? { 
+                    animate={isActive && !isLocked ? {
                       scale: [1, 1.15, 1],
                       boxShadow: [
-                        "0 0 10px rgba(196,163,90,0.4)", 
-                        "0 0 25px rgba(196,163,90,0.8)", 
-                        "0 0 10px rgba(196,163,90,0.4)"
-                      ]
+                        '0 0 10px rgba(196,163,90,0.4)',
+                        '0 0 28px rgba(196,163,90,0.85)',
+                        '0 0 10px rgba(196,163,90,0.4)',
+                      ],
                     } : {}}
-                    transition={isActive && !isLocked ? { 
-                      repeat: Infinity, 
+                    transition={isActive && !isLocked ? {
+                      repeat: Infinity,
                       duration: 1.5,
-                      ease: "easeInOut"
+                      ease: 'easeInOut',
                     } : {}}
                   />
-                  
+
                   {/* Lock Indicator */}
                   <AnimatePresence>
                     {isLocked && (
-                      <motion.div 
+                      <motion.div
                         initial={{ opacity: 0, scale: 0.5, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.5 }}
-                        className="absolute -top-7 left-1/2 -translate-x-1/2 text-red-500"
+                        className="absolute -top-7 left-1/2 -translate-x-1/2 text-signal-error"
                       >
                         <Lock size={14} className="animate-pulse" />
                       </motion.div>
@@ -120,31 +120,39 @@ const ProgressiveRibbon: React.FC<ProgressiveRibbonProps> = ({
                   {/* Active Aura */}
                   {isActive && !isLocked && (
                     <motion.div
-                      className="absolute inset-0 rounded-sm rotate-45 border border-gold/50"
-                      animate={{ scale: [1, 1.8], opacity: [0.5, 0] }}
-                      transition={{ repeat: Infinity, duration: 1.5, ease: "easeOut" }}
+                      className="absolute inset-0 rotate-45 rounded-[2px] border border-gold/50"
+                      animate={{ scale: [1, 1.9], opacity: [0.55, 0] }}
+                      transition={{ repeat: Infinity, duration: 1.5, ease: 'easeOut' }}
                     />
                   )}
 
-                  <div className="absolute -inset-3 border border-white/0 group-hover:border-white/10 rounded-full transition-colors" />
+                  <div className="absolute -inset-3 rounded-full border border-transparent transition-colors group-hover:border-teal/20" />
                 </button>
 
                 {/* Stage Metadata */}
-                <div className="text-center min-h-[35px] pointer-events-none">
-                  <p className={`text-[10px] font-mono font-medium uppercase tracking-[0.15em] transition-colors duration-500 ${
-                    isLocked ? 'text-red-400' : isActive ? 'text-gold' : isCompleted ? 'text-white/80' : 'text-white/20'
+                <div className="pointer-events-none min-h-[35px] text-center">
+                  <p className={`font-mono text-[11px] font-medium uppercase tracking-[0.22em] transition-colors duration-500 ${
+                    isLocked
+                      ? 'text-signal-error'
+                      : isActive
+                        ? 'text-gold'
+                        : isCompleted
+                          ? 'text-white/80'
+                          : 'text-white/25'
                   }`}>
                     {stage.label}
                   </p>
-                  
+
                   <div className="h-4">
                     {isLocked ? (
-                      <p className="text-[8px] font-mono text-red-500/80 uppercase mt-1 tracking-tighter font-light">Intervention Active</p>
+                      <p className="mt-1 font-mono text-[9px] font-light uppercase tracking-[0.2em] text-signal-error/80">
+                        Intervention
+                      </p>
                     ) : isActive ? (
-                      <motion.p 
+                      <motion.p
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="text-[8px] font-mono text-gold/60 uppercase mt-1 tracking-widest font-light"
+                        className="mt-1 font-mono text-[9px] font-light uppercase tracking-[0.26em] text-gold/70"
                       >
                         Active Phase
                       </motion.p>

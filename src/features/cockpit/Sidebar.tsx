@@ -14,7 +14,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ activeDivision = 'global' }) => {
   const filteredProjects = useFilteredProjects(activeDivision);
   const [isTriggering, setIsTriggering] = useState(false);
-  
+
   // Quick-Look Portal State
   const [hoveredProject, setHoveredProject] = useState<Project | null>(null);
   const [portalPos, setPortalPos] = useState({ top: 0, left: 0 });
@@ -22,19 +22,17 @@ const Sidebar: React.FC<SidebarProps> = ({ activeDivision = 'global' }) => {
   // Boundary-aware positioning
   const handleMouseEnter = (e: React.MouseEvent, project: Project) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const portalWidth = 256; // w-64
-    let left = rect.right + 10;
-    
-    // Flip to left if overflowing right edge
+    const portalWidth = 288; // w-72
+    let left = rect.right + 14;
+
     if (left + portalWidth > window.innerWidth) {
-      left = rect.left - 10 - portalWidth;
+      left = rect.left - 14 - portalWidth;
     }
 
     setPortalPos({ top: rect.top, left });
     setHoveredProject(project);
   };
 
-  // Close portal on scroll or division change
   useEffect(() => {
     const handleScroll = () => setHoveredProject(null);
     window.addEventListener('scroll', handleScroll, true);
@@ -51,11 +49,11 @@ const Sidebar: React.FC<SidebarProps> = ({ activeDivision = 'global' }) => {
       const res = await fetch('/api/workflows/agent-loop', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          tenant_id: '00000000-0000-0000-0000-000000000000', 
+        body: JSON.stringify({
+          tenant_id: '00000000-0000-0000-0000-000000000000',
           project_name: 'Jackson Construction',
-          project_brief: 'Initialise industrial refactor for Construction suite.'
-        })
+          project_brief: 'Initialise industrial refactor for Construction suite.',
+        }),
       });
       if (res.ok) {
         alert('SYSTEM: Agent Handoff Loop Initialised. Check Audit Stream.');
@@ -63,25 +61,33 @@ const Sidebar: React.FC<SidebarProps> = ({ activeDivision = 'global' }) => {
         throw new Error('Response not OK');
       }
     } catch (err) {
+      console.error('Sidebar: initiateLoop failed', err);
       alert('SYSTEM ERROR: Workflow Initiation Failed.');
     } finally {
       setIsTriggering(false);
     }
   };
 
+  const SectionLabel: React.FC<{ children: string }> = ({ children }) => (
+    <div className="mb-4 flex items-center gap-3">
+      <span className="font-mono text-[12px] uppercase tracking-[0.3em] text-[#888]">{children}</span>
+      <span className="h-px flex-1 bg-white/[0.07]" />
+    </div>
+  );
+
   return (
     <>
       {/* Mobile Division Strip */}
-      <div className="lg:hidden flex overflow-x-auto p-2 gap-2 bg-background border-b border-white/[0.07] scrollbar-hide">
+      <div className="flex gap-2 overflow-x-auto border-b border-white/[0.07] p-3 scrollbar-hide lg:hidden">
         {Array.isArray(DIVISIONS) && DIVISIONS.map((d) => (
-          <Link 
+          <Link
             key={`mobile-${d.slug}`}
             href={d.slug === 'global' ? '/' : `/division/${d.slug}`}
             aria-label={`Switch to ${d.name} view`}
-            className={`text-[9px] font-mono uppercase px-3 py-1 rounded-full whitespace-nowrap transition-all flex-shrink-0 ${
-              activeDivision === d.slug 
-                ? 'bg-gold text-black' 
-                : 'text-secondary border border-white/[0.07] hover:border-white/20'
+            className={`flex-shrink-0 whitespace-nowrap rounded-full border px-4 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] transition-all ${
+              activeDivision === d.slug
+                ? 'border-gold/30 bg-gold/[0.08] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
+                : 'border-white/[0.06] bg-black/20 text-[#cec9c1] hover:border-teal/30 hover:text-teal'
             }`}
           >
             {d.slug}
@@ -89,71 +95,100 @@ const Sidebar: React.FC<SidebarProps> = ({ activeDivision = 'global' }) => {
         ))}
       </div>
 
-      <aside className="hidden lg:flex w-64 border-r border-white/[0.07] bg-background h-full flex-col">
-        <div className="p-4 border-b border-white/[0.07] overflow-y-auto flex-1 text-xs">
-          <p className="text-[10px] font-mono uppercase text-secondary tracking-[0.1em] mb-4">Division Access</p>
-          <div className="grid grid-cols-1 gap-1 mb-6">
-            {Array.isArray(DIVISIONS) && DIVISIONS.map((d) => (
-              <Link 
-                key={d.slug}
-                href={d.slug === 'global' ? '/' : `/division/${d.slug}`}
-                aria-label={`Switch to ${d.name} view`}
-                className={`text-[10px] font-mono uppercase px-3 py-1.5 rounded-full transition-all ${
-                  activeDivision === d.slug 
-                    ? 'bg-gold text-black' 
-                    : 'text-secondary border border-transparent hover:border-white/[0.07] hover:bg-white/[0.02]'
-                }`}
-              >
-                {d.slug}
-              </Link>
-            ))}
-          </div>
+      <aside className="hidden h-full w-[18rem] shrink-0 flex-col border-r border-white/[0.05] lg:flex">
+        <div className="flex-1 overflow-y-auto px-6 py-8 scrollbar-hide">
+          {/* Division Access */}
+          <section className="mb-8">
+            <SectionLabel>Division Access</SectionLabel>
+            <div className="space-y-2">
+              {Array.isArray(DIVISIONS) && DIVISIONS.map((d) => {
+                const isActive = activeDivision === d.slug;
+                return (
+                  <Link
+                    key={d.slug}
+                    href={d.slug === 'global' ? '/' : `/division/${d.slug}`}
+                    aria-label={`Switch to ${d.name} view`}
+                    className={`block rounded-full border px-5 py-2.5 font-mono text-[12px] uppercase tracking-[0.2em] transition-all duration-300 ${
+                      isActive
+                        ? 'border-gold/30 bg-gold/[0.08] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_18px_rgba(196,163,90,0.10)]'
+                        : 'border-white/[0.06] bg-black/20 text-[#cec9c1] hover:border-teal/30 hover:bg-teal/[0.04] hover:text-teal'
+                    }`}
+                  >
+                    {d.slug}
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
 
-          <div className="flex flex-col gap-2 mb-6">
-            <p className="text-[10px] font-mono uppercase text-secondary tracking-[0.1em]">Operations</p>
-            <button 
+          {/* Operations CTA */}
+          <section className="mb-8">
+            <SectionLabel>Operations</SectionLabel>
+            <button
               disabled={isTriggering}
               onClick={initiateLoop}
-              className="w-full bg-gold border border-gold/30 text-[10px] font-sans font-semibold text-black px-3 py-2 hover:brightness-110 transition-all uppercase text-left flex justify-between items-center group disabled:opacity-30 rounded-full tracking-[0.08em]"
+              className="group inline-flex w-full items-center justify-between gap-3 rounded-full border border-gold/30 bg-gold px-5 py-3 font-mono text-[12px] font-semibold uppercase tracking-[0.15em] text-black transition duration-300 hover:-translate-y-0.5 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:translate-y-0 disabled:hover:brightness-100"
             >
               <span>{isTriggering ? 'Initialising...' : 'Initiate Handoff Loop'}</span>
-              <span className="opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+              <span className="opacity-0 transition-opacity group-hover:opacity-100">&rarr;</span>
             </button>
-          </div>
+          </section>
 
-          <p className="text-[10px] font-mono uppercase text-secondary tracking-[0.1em] mb-4">Project Portfolio</p>
-          <div className="space-y-2">
-            {!filteredProjects || filteredProjects.length === 0 ? (
-              <p className="text-[10px] font-mono text-secondary/40 uppercase p-3">No active projects</p>
-            ) : (
-              filteredProjects.map((project) => (
-                <div
-                  key={project.id}
-                  onMouseEnter={(e) => handleMouseEnter(e, project)}
-                  onMouseLeave={() => setHoveredProject(null)}
-                  className={`p-3 bg-white/[0.02] border-l-2 cursor-pointer transition-all group relative rounded-r-lg ${
-                    project.status === 'active'
-                      ? 'border-gold gold-glow'
-                      : project.status === 'blocked'
-                      ? 'border-red-500/50'
-                      : 'border-transparent'
-                  } hover:bg-white/[0.05]`}
-                >
-                  <p className="text-xs font-mono font-light text-white uppercase truncate">{project.name}</p>
-                  <div className="flex justify-between items-center mt-1">
-                    <p className="text-[10px] font-mono text-secondary uppercase">{project.stage}</p>
-                    <div className={`w-1 h-1 rounded-full ${
-                      project.status === 'active' ? 'bg-gold animate-pulse' : project.status === 'blocked' ? 'bg-red-500' : 'bg-secondary'
-                    }`} />
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+          {/* Project Portfolio */}
+          <section>
+            <SectionLabel>Project Portfolio</SectionLabel>
+            <div className="space-y-2.5">
+              {!filteredProjects || filteredProjects.length === 0 ? (
+                <p className="rounded-[1rem] border border-dashed border-white/[0.06] bg-black/20 p-4 font-mono text-[10px] uppercase tracking-[0.22em] text-[#888]">
+                  No active projects
+                </p>
+              ) : (
+                filteredProjects.map((project) => {
+                  const isActive = project.status === 'active';
+                  const isBlocked = project.status === 'blocked';
+                  return (
+                    <button
+                      type="button"
+                      key={project.id}
+                      onMouseEnter={(e) => handleMouseEnter(e, project)}
+                      onMouseLeave={() => setHoveredProject(null)}
+                      className={`group relative block w-full rounded-[1rem] border px-4 py-3 text-left transition-all duration-300 ${
+                        isActive
+                          ? 'border-gold/25 bg-gold/[0.04] hover:border-gold/45'
+                          : isBlocked
+                            ? 'border-signal-error/30 bg-signal-error/[0.03] hover:border-signal-error/50'
+                            : 'border-white/[0.06] bg-black/20 hover:border-teal/25 hover:bg-teal/[0.03]'
+                      }`}
+                    >
+                      <p className="truncate font-mono text-[12px] uppercase tracking-[0.14em] text-white">
+                        {project.name}
+                      </p>
+                      <div className="mt-2 flex items-center justify-between">
+                        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#888]">
+                          {project.stage}
+                        </p>
+                        <span
+                          aria-hidden="true"
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            isActive
+                              ? 'animate-pulse-signal bg-signal-live shadow-[0_0_10px_rgba(76,175,80,0.7)]'
+                              : isBlocked
+                                ? 'bg-signal-error shadow-[0_0_10px_rgba(239,68,68,0.6)]'
+                                : 'bg-white/30'
+                          }`}
+                        />
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </section>
         </div>
-        
-        <div className="p-4 border-t border-white/[0.07] mt-auto">
-          <form 
+
+        {/* Footer — command input + operator badge */}
+        <div className="border-t border-white/[0.07] px-6 py-6">
+          <form
             onSubmit={(e) => {
               e.preventDefault();
               const target = e.target as HTMLFormElement;
@@ -163,26 +198,31 @@ const Sidebar: React.FC<SidebarProps> = ({ activeDivision = 'global' }) => {
                 input.value = '';
               }
             }}
-            className="relative group mb-4 hidden lg:block"
+            className="relative mb-5"
           >
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary/40">
-              <span className="text-[10px] font-mono">$</span>
-            </div>
+            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 font-mono text-[11px] text-gold/60">
+              $
+            </span>
             <input
               name="command"
               type="text"
               placeholder="COMMAND..."
-              className="w-full bg-white/[0.02] border border-white/[0.07] p-2 pl-7 text-white focus:border-gold/40 focus:ring-1 focus:ring-gold/20 outline-none transition-all font-mono text-[9px] uppercase tracking-[0.1em] rounded-full"
+              aria-label="Execute cockpit command"
+              className="w-full rounded-full border border-white/[0.08] bg-white/[0.02] py-2.5 pl-9 pr-4 font-mono text-[11px] uppercase tracking-[0.15em] text-white placeholder:text-white/25 outline-none transition-all focus:border-gold/40 focus:ring-1 focus:ring-gold/20"
             />
           </form>
 
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-gold/10 border border-gold/20 flex items-center justify-center">
-              <span className="text-[10px] font-mono text-gold font-light">JD</span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-full border border-gold/25 bg-gold/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+              <span className="font-mono text-[11px] font-semibold text-gold">JD</span>
             </div>
-            <div>
-              <p className="text-[10px] font-mono font-light text-white uppercase tracking-tight">Founder Orchestrator</p>
-              <p className="text-[9px] font-mono text-secondary uppercase">Session: {activeDivision?.toUpperCase()}</p>
+            <div className="min-w-0">
+              <p className="truncate font-mono text-[11px] uppercase tracking-[0.14em] text-white">
+                Founder Orchestrator
+              </p>
+              <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-[#888]">
+                Session &middot; {activeDivision?.toUpperCase()}
+              </p>
             </div>
           </div>
         </div>
@@ -190,10 +230,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeDivision = 'global' }) => {
 
       <AnimatePresence>
         {hoveredProject && (
-          <QuickLookPortal 
-            project={hoveredProject} 
-            position={portalPos} 
-          />
+          <QuickLookPortal project={hoveredProject} position={portalPos} />
         )}
       </AnimatePresence>
     </>

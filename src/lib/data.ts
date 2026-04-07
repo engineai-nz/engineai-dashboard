@@ -1,65 +1,82 @@
 export type DivisionSlug = 'global' | 'biab' | 'skunkworks' | 'modular' | 'desktop';
 
+/**
+ * KPI definition for a division telemetry tile.
+ *
+ * `value` and `trend` are optional mock data used until real values
+ * are wired through from the task ledger / Supabase. The 'health'
+ * KPI is special-cased in HUD.tsx to read from the live task ledger,
+ * so its value/trend here are just fallbacks for when no health
+ * task is in flight yet.
+ *
+ * `status` defaults to 'nominal'. Set to 'warning' or 'critical' to
+ * tint the corresponding TelemetryCard.
+ */
+export interface DivisionKpi {
+  label: string;
+  key: string;
+  value: string;
+  trend?: string;
+  status?: 'nominal' | 'warning' | 'critical';
+}
+
 export interface Division {
   slug: DivisionSlug;
   name: string;
-  kpis: {
-    label: string;
-    key: string;
-  }[];
+  kpis: DivisionKpi[];
 }
 
 export const DIVISIONS: Division[] = [
-  { 
-    slug: 'global', 
+  {
+    slug: 'global',
     name: 'Global Portfolio',
     kpis: [
-      { label: 'Monthly Recurring Revenue', key: 'mrr' },
-      { label: 'Agency Velocity', key: 'velocity' },
-      { label: 'Token Consumption', key: 'tokens' },
-      { label: 'System Health', key: 'health' }
-    ]
+      { label: 'Monthly Recurring Revenue', key: 'mrr', value: '$142.5K', trend: '+12% MoM' },
+      { label: 'Agency Velocity', key: 'velocity', value: '8.2', trend: '+1.4 ships/wk' },
+      { label: 'Token Consumption', key: 'tokens', value: '$8,420', trend: '-5% optimised' },
+      { label: 'System Health', key: 'health', value: 'OPTIMAL', trend: '24ms' },
+    ],
   },
-  { 
-    slug: 'biab', 
+  {
+    slug: 'biab',
     name: 'Business In A Box',
     kpis: [
-      { label: 'Build Velocity', key: 'velocity' },
-      { label: 'Cloning Efficiency', key: 'cloning' },
-      { label: 'Active Provisioning', key: 'active' },
-      { label: 'Success Rate', key: 'success' }
-    ]
+      { label: 'Build Velocity', key: 'velocity', value: '24h', trend: 'avg full-stack' },
+      { label: 'Cloning Efficiency', key: 'cloning', value: '94%', trend: '+3% WoW' },
+      { label: 'Active Provisioning', key: 'active', value: '3', trend: 'tenants' },
+      { label: 'Success Rate', key: 'success', value: '97%', trend: 'last 30d' },
+    ],
   },
-  { 
-    slug: 'skunkworks', 
+  {
+    slug: 'skunkworks',
     name: 'SkunkWorks (Special Projects)',
     kpis: [
-      { label: 'R&D Burn Rate', key: 'burn' },
-      { label: 'Innovation Index', key: 'innovation' },
-      { label: 'Prototype Lead Time', key: 'lead_time' },
-      { label: 'Research Depth', key: 'research' }
-    ]
+      { label: 'R&D Burn Rate', key: 'burn', value: '$4.1K', trend: 'monthly' },
+      { label: 'Innovation Index', key: 'innovation', value: '7.8', trend: '/10 internal' },
+      { label: 'Prototype Lead Time', key: 'lead_time', value: '6d', trend: 'concept to demo' },
+      { label: 'Research Depth', key: 'research', value: '12', trend: 'active threads' },
+    ],
   },
-  { 
-    slug: 'modular', 
+  {
+    slug: 'modular',
     name: 'Modular Builds (OpenClaw)',
     kpis: [
-      { label: 'Module Hot-Loads', key: 'hotloads' },
-      { label: 'Interface Stability', key: 'stability' },
-      { label: 'Bridge Traffic', key: 'bridge' },
-      { label: 'Agent Handoffs', key: 'handoffs' }
-    ]
+      { label: 'Module Hot-Loads', key: 'hotloads', value: '47', trend: 'last 24h' },
+      { label: 'Interface Stability', key: 'stability', value: '99.4%', trend: '7d uptime' },
+      { label: 'Bridge Traffic', key: 'bridge', value: '1.2K', trend: 'reqs/hr' },
+      { label: 'Agent Handoffs', key: 'handoffs', value: '312', trend: 'last 24h' },
+    ],
   },
-  { 
-    slug: 'desktop', 
+  {
+    slug: 'desktop',
     name: 'Desktop AI Setups',
     kpis: [
-      { label: 'Deployment Count', key: 'deployments' },
-      { label: 'Local Latency', key: 'latency' },
-      { label: 'Sync Integrity', key: 'sync' },
-      { label: 'Compute Efficiency', key: 'compute' }
-    ]
-  }
+      { label: 'Deployment Count', key: 'deployments', value: '5', trend: 'active rigs' },
+      { label: 'Local Latency', key: 'latency', value: '12ms', trend: 'p95' },
+      { label: 'Sync Integrity', key: 'sync', value: '100%', trend: 'no drift' },
+      { label: 'Compute Efficiency', key: 'compute', value: '88%', trend: 'GPU util' },
+    ],
+  },
 ];
 
 export interface Project {

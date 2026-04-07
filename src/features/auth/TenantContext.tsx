@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { User } from '@supabase/supabase-js'
+import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js'
 
 type TenantContextType = {
   user: User | null
@@ -31,11 +31,13 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
     getSession()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      setTenantId(session?.user?.user_metadata?.tenant_id ?? null)
-      setLoading(false)
-    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event: AuthChangeEvent, session: Session | null) => {
+        setUser(session?.user ?? null)
+        setTenantId(session?.user?.user_metadata?.tenant_id ?? null)
+        setLoading(false)
+      },
+    )
 
     return () => subscription.unsubscribe()
   }, [supabase])

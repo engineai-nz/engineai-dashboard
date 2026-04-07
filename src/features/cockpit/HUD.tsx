@@ -15,6 +15,7 @@ import { DIVISIONS, DivisionSlug } from '@/lib/data';
 import { useFilteredProjects } from '@/hooks/useFilteredProjects';
 import { useTaskLedger } from '@/hooks/useTaskLedger';
 import { useActiveModules } from '@/hooks/useActiveModules';
+import { useCockpitShell } from '@/components/CockpitShell';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ShieldCheck, ShieldAlert, Cpu, Database, Github, GitBranch, GitPullRequest, ExternalLink, Lock, Rocket, LayoutDashboard, LifeBuoy } from 'lucide-react';
 
@@ -22,10 +23,18 @@ type CockpitMode = 'operations' | 'services';
 
 interface HUDProps {
   activeDivision?: DivisionSlug;
+  /**
+   * Optional override. When omitted, HUD reads pause state from
+   * <CockpitShell> via useCockpitShell(). The prop exists so the
+   * component can still be mounted in isolation (Storybook, tests)
+   * without a shell wrapper.
+   */
   isSystemPaused?: boolean;
 }
 
-const HUD: React.FC<HUDProps> = ({ activeDivision = 'global', isSystemPaused = false }) => {
+const HUD: React.FC<HUDProps> = ({ activeDivision = 'global', isSystemPaused: pausedProp }) => {
+  const { isSystemPaused: pausedFromShell } = useCockpitShell();
+  const isSystemPaused = pausedProp ?? pausedFromShell;
   const [mode, setMode] = useState<CockpitMode>('operations');
   const division = useMemo(() => 
     Array.isArray(DIVISIONS) ? (DIVISIONS.find(d => d.slug === activeDivision) || DIVISIONS.find(d => d.slug === 'global') || DIVISIONS[0]) : null
@@ -45,7 +54,11 @@ const HUD: React.FC<HUDProps> = ({ activeDivision = 'global', isSystemPaused = f
   }, [activeDivision, filteredProjectsInitial.length]);
 
   if (!division) {
-    return <div className="p-8 text-red-500 font-mono text-xs uppercase text-center border border-red-500/20 bg-red-500/5 uppercase">CRITICAL: SYSTEM DATA CORRUPTED</div>;
+    return (
+      <div className="m-8 rounded-[1.4rem] border border-signal-error/30 bg-signal-error/[0.05] p-8 text-center font-mono text-[11px] uppercase tracking-[0.26em] text-signal-error">
+        CRITICAL &middot; System Data Corrupted
+      </div>
+    );
   }
 
   // Memoize latest decision
@@ -104,123 +117,299 @@ const HUD: React.FC<HUDProps> = ({ activeDivision = 'global', isSystemPaused = f
       : date.toLocaleTimeString('en-NZ', { timeZone: 'UTC', hour12: false }) + ' UTC';
   }, [tasks]);
 
+  const pipelineLabel = isSreActive ? 'Repairing' : isSystemPaused ? 'Paused' : 'Active';
+  const pipelineTone = isSystemPaused
+    ? 'border-amber-400/30 bg-amber-400/[0.06] text-amber-300'
+    : isSreActive
+      ? 'border-signal-error/30 bg-signal-error/[0.06] text-signal-error'
+      : 'border-gold/30 bg-gold/[0.06] text-gold';
+
   return (
-    <div className="flex flex-col lg:flex-row h-auto lg:h-[calc(100vh-4rem)] overflow-hidden relative">
+    <div className="relative flex h-auto flex-col overflow-hidden lg:h-[calc(100vh-5.25rem)] lg:flex-row">
       <Sidebar activeDivision={activeDivision} />
       <GlitchOverlay isActive={isSreActive} />
-      
+
       <AnimatePresence>
         {isSystemPaused && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 pointer-events-none z-[300] border-[12px] border-amber-500/10">
-            <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-amber-500/90 text-black px-6 py-1.5 font-mono font-bold text-[10px] uppercase tracking-[0.3em] shadow-2xl backdrop-blur-sm pointer-events-auto">
-              Orchestration Paused: Manual Control Active
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="pointer-events-none fixed inset-0 z-[300] border-[12px] border-amber-400/10"
+          >
+            <div className="pointer-events-auto absolute left-1/2 top-[7.5rem] -translate-x-1/2 rounded-full border border-amber-400/40 bg-amber-400/90 px-6 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.24em] text-black shadow-[0_24px_60px_rgba(0,0,0,0.4)] backdrop-blur-sm">
+              Orchestration Paused &middot; Manual Control Active
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-      
-      <main className={`flex-1 overflow-y-auto p-4 md:p-6 pb-24 lg:pb-6 space-y-8 bg-background transition-all duration-500 ${isSystemPaused ? 'grayscale-[0.5] contrast-[0.8]' : ''}`}>
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-white/[0.07] pb-6 gap-4 font-mono relative z-20">
+
+      <main
+        className={`relative flex-1 space-y-10 overflow-y-auto px-6 py-10 pb-28 transition-all duration-500 lg:px-10 lg:pb-10 ${
+          isSystemPaused ? 'grayscale-[0.5] contrast-[0.8]' : ''
+        }`}
+      >
+        <header className="relative z-20 flex flex-col gap-6 border-b border-white/[0.07] pb-8 md:flex-row md:items-end md:justify-between">
           <div className="flex-1">
-            <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-3xl font-light font-sans text-white tracking-tighter uppercase">{division.name}</h1>
-              <div className="flex items-center gap-2">
-                <div className="px-2 py-0.5 border border-gold/20 bg-gold/5 rounded-none">
-                  <p className={`text-[8px] uppercase tracking-[0.1em] animate-pulse ${isSreActive ? 'text-gold' : isSystemPaused ? 'text-white/40' : 'text-gold'}`}>
-                    Pipeline: {isSreActive ? 'Repairing' : isSystemPaused ? 'Paused' : 'Active'}
-                  </p>
-                </div>
-                {/* Mode Toggles */}
-                <div className="flex border border-white/[0.07] rounded-full overflow-hidden ml-4">
-                  <button onClick={() => setMode('operations')} className={`px-2 py-1 text-[8px] uppercase font-bold transition-opacity ${mode === 'operations' ? 'bg-gold text-black' : 'text-white/40 hover:text-white'}`}><LayoutDashboard size={10} /></button>
-                  <button onClick={() => setMode('services')} className={`px-2 py-1 text-[8px] uppercase font-bold transition-opacity ${mode === 'services' ? 'bg-gold text-black' : 'text-white/40 hover:text-white'}`}><LifeBuoy size={10} /></button>
-                </div>
+            <div className="mb-4 flex items-center gap-3">
+              <span className="font-mono text-[11px] uppercase tracking-[0.34em] text-[#888]">
+                {division.slug === 'global' ? 'Active Portfolio' : 'Division Intelligence'}
+              </span>
+              <span className="h-px flex-1 max-w-[12rem] bg-white/[0.07]" />
+            </div>
+            <div className="flex flex-wrap items-end gap-5">
+              <h1 className="text-4xl font-semibold leading-[1.04] tracking-[-0.04em] text-white md:text-5xl">
+                {division.name}
+              </h1>
+              <span
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 font-mono text-[10px] uppercase tracking-[0.22em] ${pipelineTone}`}
+              >
+                <span
+                  aria-hidden="true"
+                  className="h-1.5 w-1.5 animate-pulse-signal rounded-full bg-current"
+                />
+                Pipeline &middot; {pipelineLabel}
+              </span>
+
+              {/* Mode toggle — glass pill nav */}
+              <div className="liquid-glass flex items-center rounded-full px-1.5 py-1">
+                <button
+                  onClick={() => setMode('operations')}
+                  aria-label="Operations mode"
+                  className={`relative z-[1] inline-flex items-center gap-2 rounded-full px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] transition-colors ${
+                    mode === 'operations'
+                      ? 'bg-gold/15 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_0_18px_rgba(196,163,90,0.18)]'
+                      : 'text-[#cec9c1] hover:bg-teal/[0.06] hover:text-teal'
+                  }`}
+                >
+                  <LayoutDashboard size={11} className={mode === 'operations' ? 'text-gold' : ''} />
+                  Ops
+                </button>
+                <button
+                  onClick={() => setMode('services')}
+                  aria-label="Services mode"
+                  className={`relative z-[1] inline-flex items-center gap-2 rounded-full px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] transition-colors ${
+                    mode === 'services'
+                      ? 'bg-gold/15 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_0_18px_rgba(196,163,90,0.18)]'
+                      : 'text-[#cec9c1] hover:bg-teal/[0.06] hover:text-teal'
+                  }`}
+                >
+                  <LifeBuoy size={11} className={mode === 'services' ? 'text-gold' : ''} />
+                  Services
+                </button>
               </div>
             </div>
-            <p className="text-[10px] font-mono font-light uppercase text-secondary mt-1 tracking-[0.1em]">Operational Oversight: {division.slug === 'global' ? 'Active Agency Portfolio' : 'Division Intelligence'}</p>
           </div>
-          <div className="text-right text-secondary">
-            <p className="text-[10px] uppercase leading-none mb-1 text-xs">Last Context Sync</p>
-            <p className="text-xs font-mono uppercase font-light text-white">{syncTime}</p>
+
+          <div className="text-right">
+            <p className="font-mono text-[10px] uppercase tracking-[0.26em] text-[#888]">Last Context Sync</p>
+            <p className="mt-1 font-mono text-[12px] uppercase tracking-[0.14em] text-white">{syncTime}</p>
           </div>
         </header>
 
         <AnimatePresence mode="wait">
           {mode === 'operations' ? (
-            <motion.div key="operations" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-8">
-              <section className="space-y-4 relative z-20">
-                <h2 className="text-[10px] font-mono uppercase text-secondary tracking-[0.1em]">Strategic Rationale</h2>
+            <motion.div
+              key="operations"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.35, ease: 'easeOut' }}
+              className="space-y-12"
+            >
+              {/* Strategic Rationale */}
+              <section className="relative z-20 space-y-5">
+                <div className="flex items-center gap-3">
+                  <span className="font-mono text-[11px] uppercase tracking-[0.34em] text-[#888]">
+                    Strategic Rationale
+                  </span>
+                  <span className="h-px flex-1 max-w-[12rem] bg-white/[0.07]" />
+                </div>
                 {latestDecision ? (
-                  <DecisionCard rationale={latestDecision.executive_rationale!} agentRole={latestDecision.recipient_role} taskTitle={latestDecision.task_title} onClick={() => setSelectedTask(latestDecision as unknown as AuditTask)} />
+                  <DecisionCard
+                    rationale={latestDecision.executive_rationale!}
+                    agentRole={latestDecision.recipient_role}
+                    taskTitle={latestDecision.task_title}
+                    onClick={() => setSelectedTask(latestDecision as unknown as AuditTask)}
+                  />
                 ) : (
-                  <div className="p-8 border border-white/[0.07] bg-card-bg rounded-lg flex items-center justify-center text-center opacity-40">
-                    <p className="text-[10px] font-mono uppercase tracking-[0.1em] leading-relaxed text-secondary">Awaiting Agentic Decisions...</p>
+                  <div className="flex items-center justify-center rounded-[1.4rem] border border-dashed border-white/[0.07] bg-[rgba(12,12,12,0.5)] p-10">
+                    <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-white/30">
+                      Awaiting agentic decisions...
+                    </p>
                   </div>
                 )}
               </section>
 
-              <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 relative z-20">
-                {division.kpis?.map((kpi, idx) => (
-                  <TelemetryCard 
-                    key={`${division.slug}-${kpi.key}-${idx}`} 
-                    label={kpi.label} 
-                    value={kpi.key === 'health' ? systemHealth.value : 'READ'} 
-                    trend={kpi.key === 'health' ? systemHealth.latency : undefined}
-                    status={kpi.key === 'health' ? systemHealth.status : 'nominal'}
-                  />
-                ))}
+              {/* KPI grid */}
+              <section className="relative z-20 space-y-5">
+                <div className="flex items-center gap-3">
+                  <span className="font-mono text-[11px] uppercase tracking-[0.34em] text-[#888]">
+                    Telemetry
+                  </span>
+                  <span className="h-px flex-1 max-w-[12rem] bg-white/[0.07]" />
+                </div>
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
+                  {division.kpis?.map((kpi, idx) => {
+                    // 'health' is the only live KPI right now — it reads from
+                    // the task ledger via systemHealth above. Every other KPI
+                    // falls back to the mock value/trend defined in DIVISIONS.
+                    const isHealth = kpi.key === 'health';
+                    return (
+                      <TelemetryCard
+                        key={`${division.slug}-${kpi.key}-${idx}`}
+                        label={kpi.label}
+                        value={isHealth ? systemHealth.value : kpi.value}
+                        trend={isHealth ? systemHealth.latency : kpi.trend}
+                        status={isHealth ? systemHealth.status : kpi.status ?? 'nominal'}
+                      />
+                    );
+                  })}
+                </div>
               </section>
 
-              <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-20">
-                <div className="lg:col-span-2 bg-card-bg border border-white/[0.07] p-6 rounded-lg min-h-[300px] flex flex-col relative group text-xs overflow-hidden">
+              {/* Active Deliveries + Task Ledger */}
+              <section className="relative z-20 grid grid-cols-1 gap-6 lg:grid-cols-3">
+                <div className="group relative flex min-h-[320px] flex-col overflow-hidden rounded-[1.75rem] border border-white/[0.07] bg-[rgba(12,12,12,0.84)] p-7 shadow-[0_18px_44px_rgba(0,0,0,0.32)] lg:col-span-2">
+                  <div className="absolute inset-x-0 top-0 h-[3px] bg-gold" />
                   <FlickerOverlay isActive={isRefactoring} />
-                  <div className="flex justify-between items-center mb-6 font-mono relative z-20">
-                    <h2 className="text-xs uppercase text-white tracking-[0.1em] font-light">Active Deliveries</h2>
-                    <button className="text-[10px] text-gold hover:text-gold/80 transition-opacity uppercase underline font-mono">View Full Factory</button>
+
+                  <div className="relative z-20 mb-7 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono text-[11px] uppercase tracking-[0.26em] text-[#888]">
+                        Active Deliveries
+                      </span>
+                    </div>
+                    <button className="group/link inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.22em] text-gold transition-colors hover:text-teal">
+                      View Full Factory
+                      <span className="transition-transform group-hover/link:translate-x-0.5">&rarr;</span>
+                    </button>
                   </div>
-                  <div className="flex-1 space-y-6 relative z-20">
+
+                  <div className="relative z-20 flex-1 space-y-5">
                     {[...projects, ...modules.map(m => ({ id: m.id, name: m.concept_title, stage: 'analysis', status: 'active' as const, division: 'modular' as DivisionSlug, lockedStages: [] }))].length === 0 ? (
-                      <div className="h-full flex items-center justify-center border border-white/[0.07] rounded-lg bg-white/[0.02] opacity-20"><p className="text-[10px] font-mono uppercase tracking-[0.1em] text-secondary">Initialising Component Stream...</p></div>
+                      <div className="flex h-full items-center justify-center rounded-[1.2rem] border border-dashed border-white/[0.07] bg-black/20 py-10">
+                        <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-white/30">
+                          Initialising component stream...
+                        </p>
+                      </div>
                     ) : (
-                      [...projects, ...modules.map(m => ({ id: m.id, name: m.concept_title, stage: 'analysis', status: 'active' as const, division: 'modular' as any, lockedStages: [] }))].map(project => {
+                      [...projects, ...modules.map(m => ({ id: m.id, name: m.concept_title, stage: 'analysis', status: 'active' as const, division: 'modular' as DivisionSlug, lockedStages: [] }))].map(project => {
                         const statusInfo = projectStatusMap[project.name] || {};
                         const isQualityValid = statusInfo.quality === 'completed';
                         const isHotLoaded = modules.some(m => m.id === project.id);
+                        const isLocked = (project.lockedStages?.length ?? 0) > 0;
                         return (
-                          <div key={project.id} className={`border p-4 rounded-lg transition-all duration-500 relative overflow-hidden ${project.lockedStages && project.lockedStages.length > 0 ? 'border-white/20 bg-white/5' : 'border-white/[0.07] bg-white/[0.02]'}`}>
-                            <div className="flex justify-between items-start mb-4">
-                              <div className="flex flex-wrap items-center gap-3">
-                                <span className="text-[11px] font-light font-mono text-white uppercase tracking-tight">{project.name}</span>
-                                {isQualityValid && <div className="flex items-center gap-1 text-[8px] font-mono text-gold bg-gold/5 px-1.5 py-0.5 border border-gold/20 rounded-full"><ShieldCheck size={10} /> Quality Verified</div>}
-                                {isHotLoaded && <div className="flex items-center gap-1 text-[8px] font-mono text-white bg-white/10 px-1.5 py-0.5 border border-white/20 rounded-full animate-pulse font-light tracking-[0.1em]"><Rocket size={10} /> Hot-Loaded</div>}
+                          <div
+                            key={project.id}
+                            className={`relative overflow-hidden rounded-[1.2rem] border p-5 transition-all duration-500 ${
+                              isLocked
+                                ? 'border-signal-error/25 bg-signal-error/[0.03]'
+                                : 'border-white/[0.07] bg-white/[0.02]'
+                            }`}
+                          >
+                            <div className="mb-4 flex items-start justify-between gap-3">
+                              <div className="flex flex-wrap items-center gap-2.5">
+                                <span className="font-mono text-[12px] uppercase tracking-[0.14em] text-white">
+                                  {project.name}
+                                </span>
+                                {isQualityValid && (
+                                  <span className="inline-flex items-center gap-1 rounded-full border border-signal-live/30 bg-signal-live/[0.08] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-signal-live">
+                                    <ShieldCheck size={10} /> Quality
+                                  </span>
+                                )}
+                                {isHotLoaded && (
+                                  <span className="inline-flex animate-pulse items-center gap-1 rounded-full border border-teal/30 bg-teal/[0.06] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-teal">
+                                    <Rocket size={10} /> Hot-Loaded
+                                  </span>
+                                )}
                               </div>
-                              <span className="text-[9px] font-mono text-secondary uppercase">{project.stage} phase</span>
+                              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#888]">
+                                {project.stage}
+                              </span>
                             </div>
-                            <ProgressiveRibbon currentStageId={project.stage} lockedStages={project.lockedStages} onToggleLock={(stageId) => handleToggleLock(project.id, stageId)} />
-                            <div className="mt-4"><CodeStream isActive={isRefactoring && project.status === 'active'} /></div>
+                            <ProgressiveRibbon
+                              currentStageId={project.stage}
+                              lockedStages={project.lockedStages}
+                              onToggleLock={(stageId) => handleToggleLock(project.id, stageId)}
+                            />
+                            <div className="mt-4">
+                              <CodeStream isActive={isRefactoring && project.status === 'active'} />
+                            </div>
                           </div>
                         );
                       })
                     )}
                   </div>
-                  {isSystemPaused && <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-30"><p className="text-[10px] font-mono text-white uppercase tracking-[0.2em] font-light">Flow Interrupted</p></div>}
+
+                  {isSystemPaused && (
+                    <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+                      <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-white">
+                        Flow Interrupted
+                      </p>
+                    </div>
+                  )}
                 </div>
 
-                <div className="bg-card-bg border border-white/[0.07] p-6 rounded-lg flex flex-col h-full text-xs">
-                  <h2 className="text-xs font-mono uppercase text-secondary tracking-[0.1em] mb-6 font-light text-xs">Task Ledger Audit</h2>
-                  <div className="flex-1 overflow-y-auto space-y-4 max-h-[400px] scrollbar-hide relative z-20">
-                    {tasks.length === 0 ? <p className="text-[10px] font-mono uppercase tracking-[0.1em] text-center py-10 opacity-20 text-secondary">Audit Stream Empty</p> : tasks.map((task) => (
-                      <button key={task.id} onClick={() => setSelectedTask(task as unknown as AuditTask)} className="w-full text-left flex gap-3 items-start border-l border-white/[0.07] pl-3 py-2 hover:bg-white/[0.02] transition-colors group">
-                        <div className={`w-1.5 h-1.5 mt-1.5 rounded-full ${task.task_title?.includes('SRE') || task.status === 'failed' ? 'bg-red-500 animate-pulse' : task.status === 'completed' ? 'bg-gold animate-pulse' : 'bg-secondary'}`} />
-                        <div>
-                          <div className="flex justify-between items-center gap-4">
-                            <p className={`text-[10px] font-mono font-light uppercase ${task.task_title?.includes('SRE') || task.status === 'failed' ? 'text-red-400' : 'text-secondary'}`}>{task.sender_role} → {task.recipient_role}</p>
-                            <p className="text-[8px] font-mono text-secondary/40 uppercase tracking-tighter">Trace available</p>
-                          </div>
-                          <p className={`text-[11px] font-mono font-light uppercase tracking-tight mt-0.5 ${task.task_title?.includes('SRE') ? 'text-gold' : 'text-white'}`}>{task.task_title}</p>
-                        </div>
-                      </button>
-                    ))}
+                {/* Task Ledger Audit */}
+                <div className="flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-white/[0.07] bg-[rgba(12,12,12,0.84)] p-7 shadow-[0_18px_44px_rgba(0,0,0,0.32)]">
+                  <div className="mb-6 flex items-center justify-between">
+                    <span className="font-mono text-[11px] uppercase tracking-[0.26em] text-[#888]">
+                      Task Ledger
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      className="h-1.5 w-1.5 animate-pulse-signal rounded-full bg-signal-live shadow-[0_0_10px_rgba(76,175,80,0.7)]"
+                    />
+                  </div>
+
+                  <div className="scrollbar-hide relative z-20 max-h-[400px] flex-1 space-y-1 overflow-y-auto">
+                    {tasks.length === 0 ? (
+                      <p className="py-10 text-center font-mono text-[11px] uppercase tracking-[0.26em] text-white/25">
+                        Audit stream empty
+                      </p>
+                    ) : (
+                      tasks.map((task) => {
+                        const isCritical = task.task_title?.includes('SRE') || task.status === 'failed';
+                        const isCompleted = task.status === 'completed';
+                        return (
+                          <button
+                            type="button"
+                            key={task.id}
+                            onClick={() => setSelectedTask(task as unknown as AuditTask)}
+                            className="group flex w-full items-start gap-3 rounded-[0.9rem] border border-transparent px-3 py-2.5 text-left transition-colors hover:border-teal/20 hover:bg-teal/[0.03]"
+                          >
+                            <span
+                              aria-hidden="true"
+                              className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${
+                                isCritical
+                                  ? 'animate-pulse bg-signal-error shadow-[0_0_10px_rgba(239,68,68,0.6)]'
+                                  : isCompleted
+                                    ? 'bg-signal-live shadow-[0_0_10px_rgba(76,175,80,0.6)]'
+                                    : 'bg-white/30'
+                              }`}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-3">
+                                <p className={`truncate font-mono text-[10px] uppercase tracking-[0.18em] ${
+                                  isCritical ? 'text-signal-error' : 'text-[#888]'
+                                }`}>
+                                  {task.sender_role} &rarr; {task.recipient_role}
+                                </p>
+                                <p className="shrink-0 font-mono text-[8px] uppercase tracking-[0.18em] text-white/30">
+                                  Trace
+                                </p>
+                              </div>
+                              <p className={`mt-1 truncate font-mono text-[11px] uppercase tracking-[0.12em] ${
+                                isCritical ? 'text-signal-error' : 'text-white'
+                              }`}>
+                                {task.task_title}
+                              </p>
+                            </div>
+                          </button>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
               </section>

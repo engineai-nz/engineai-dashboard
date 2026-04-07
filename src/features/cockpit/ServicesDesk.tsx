@@ -1,8 +1,7 @@
 'use client'
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, LifeBuoy, Search, Info, CheckCircle2, UserCircle, HelpCircle } from 'lucide-react';
+import { MessageSquare, LifeBuoy, Info, HelpCircle } from 'lucide-react';
 
 interface Inquiry {
   id: string;
@@ -19,51 +18,92 @@ const MOCK_INQUIRIES: Inquiry[] = [
 ];
 
 const ServicesDesk: React.FC = () => {
-  const [inquiries, setInquiries] = useState(MOCK_INQUIRIES);
+  const [inquiries] = useState(MOCK_INQUIRIES);
 
   const handleInitialise = (id: string) => {
     alert(`SYSTEM: Initialising resolution sequence for Enquiry ${id}...`);
   };
 
+  const priorityTone = (p: Inquiry['priority']) =>
+    p === 'high'
+      ? 'border-signal-error/30 bg-signal-error/[0.06] text-signal-error'
+      : p === 'medium'
+        ? 'border-amber-400/30 bg-amber-400/[0.06] text-amber-300'
+        : 'border-white/[0.08] bg-white/[0.02] text-[#888]';
+
+  const statusDot = (s: Inquiry['status']) =>
+    s === 'pending'
+      ? 'animate-pulse-signal bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.65)]'
+      : s === 'resolving'
+        ? 'animate-pulse-signal bg-signal-live shadow-[0_0_10px_rgba(76,175,80,0.7)]'
+        : 'bg-white/30';
+
   return (
-    <div className="flex-1 flex flex-col gap-8 h-full min-h-[600px] font-mono">
-      <section className="bg-white/2 border border-white/10 p-8 rounded-none relative overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between mb-8">
+    <div className="flex h-full min-h-[600px] flex-1 flex-col gap-8">
+      {/* Active Inquiries */}
+      <section className="relative overflow-hidden rounded-[1.75rem] border border-white/[0.07] bg-[rgba(12,12,12,0.84)] p-8 shadow-[0_18px_44px_rgba(0,0,0,0.32)]">
+        <div className="absolute inset-x-0 top-0 h-[3px] bg-gold" />
+
+        <div className="mb-8 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <LifeBuoy size={20} className="text-white" />
-            <h2 className="text-xl font-light text-foreground uppercase tracking-tight">Active Inquiries</h2>
+            <LifeBuoy size={18} className="text-gold" />
+            <span className="font-mono text-[11px] uppercase tracking-[0.26em] text-[#888]">
+              Active Inquiries
+            </span>
           </div>
-          <div className="px-2 py-0.5 bg-white/5 border border-white/10 rounded-none">
-            <p className="text-[8px] text-white animate-pulse uppercase tracking-[0.2em] font-bold">Support Pulse: Active</p>
-          </div>
+          <span className="inline-flex items-center gap-2 rounded-full border border-signal-live/30 bg-signal-live/[0.06] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.22em] text-signal-live">
+            <span
+              aria-hidden="true"
+              className="h-1.5 w-1.5 animate-pulse-signal rounded-full bg-signal-live shadow-[0_0_10px_rgba(76,175,80,0.7)]"
+            />
+            Support Pulse
+          </span>
         </div>
 
-        <div className="space-y-4 flex-1">
+        <h3 className="mb-6 text-2xl font-medium tracking-[-0.03em] text-white">
+          Current queue
+        </h3>
+
+        <div className="space-y-4">
           {inquiries.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-32 opacity-20">
-              <HelpCircle size={24} className="mb-2" />
-              <p className="text-[10px] uppercase tracking-widest text-secondary">No active inquiries</p>
+            <div className="flex flex-col items-center justify-center gap-3 rounded-[1.2rem] border border-dashed border-white/[0.07] bg-black/20 py-12">
+              <HelpCircle size={22} className="text-white/25" />
+              <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-white/30">
+                No active inquiries
+              </p>
             </div>
           ) : (
             inquiries.map((q) => (
-              <div key={q.id} className="bg-black/20 border border-white/10 p-4 rounded-none group hover:opacity-50 transition-all cursor-pointer">
-                <div className="flex justify-between items-start mb-2">
+              <div
+                key={q.id}
+                className="group cursor-pointer rounded-[1.2rem] border border-white/[0.07] bg-black/20 p-5 transition-all duration-300 hover:border-teal/25 hover:bg-teal/[0.03]"
+              >
+                <div className="mb-3 flex items-start justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className={`w-1.5 h-1.5 rounded-none ${q.status === 'pending' ? 'bg-white' : 'border border-white/40'}`} />
-                    <p className="text-[10px] font-bold text-secondary uppercase">{q.client}</p>
+                    <span aria-hidden="true" className={`h-2 w-2 rounded-full ${statusDot(q.status)}`} />
+                    <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#888]">
+                      {q.client}
+                    </p>
                   </div>
-                  <span className={`text-[8px] px-1.5 py-0.5 border rounded-none uppercase ${q.priority === 'high' ? 'border-white/40 text-white font-bold' : 'border-white/10 text-white/60'}`}>
+                  <span className={`rounded-full border px-2.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.2em] ${priorityTone(q.priority)}`}>
                     {q.priority} priority
                   </span>
                 </div>
-                <h3 className="text-sm font-bold text-foreground uppercase mb-1">{q.subject}</h3>
-                <div className="flex justify-between items-center mt-4 pt-3 border-t border-white/5">
-                  <p className="text-[8px] text-secondary uppercase tracking-tighter">{q.timestamp} UTC</p>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); handleInitialise(q.id); }}
-                    className="text-[9px] text-white/80 hover:text-white uppercase font-bold underline p-1"
+                <h4 className="text-[1.05rem] font-medium tracking-[-0.02em] text-white">
+                  {q.subject}
+                </h4>
+                <div className="mt-5 flex items-center justify-between border-t border-white/[0.05] pt-4">
+                  <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-[#888]">
+                    {q.timestamp} UTC
+                  </p>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleInitialise(q.id);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/[0.06] px-3 py-1 font-mono text-[9px] font-semibold uppercase tracking-[0.2em] text-gold transition-all duration-300 hover:bg-gold hover:text-black"
                   >
-                    Initialise Response
+                    Initialise Response &rarr;
                   </button>
                 </div>
               </div>
@@ -72,15 +112,23 @@ const ServicesDesk: React.FC = () => {
         </div>
       </section>
 
-      <section className="bg-white/2 border border-dashed border-white/10 p-8 rounded-none relative overflow-hidden flex flex-col h-[300px]">
-        <div className="flex items-center gap-3 mb-8 opacity-60">
-          <Info size={20} className="text-white" />
-          <h2 className="text-xl font-light text-foreground uppercase tracking-tight">Workflow Interrogation</h2>
+      {/* Workflow Interrogation — empty-state prompt */}
+      <section className="relative flex h-[280px] flex-col overflow-hidden rounded-[1.75rem] border border-dashed border-white/[0.08] bg-[rgba(12,12,12,0.5)] p-8">
+        <div className="mb-6 flex items-center gap-3">
+          <Info size={18} className="text-gold/70" />
+          <span className="font-mono text-[11px] uppercase tracking-[0.26em] text-[#888]">
+            Workflow Interrogation
+          </span>
         </div>
-        <div className="flex-1 flex flex-col items-center justify-center opacity-40 text-center">
-          <MessageSquare size={32} className="mb-4 text-white" />
-          <p className="text-xs uppercase tracking-[0.4em] text-secondary">Use Command Strip to query active pipelines</p>
-          <p className="text-[8px] mt-2 italic text-secondary">Example: "Interrogate Jackson Construction AST Sync"</p>
+
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
+          <MessageSquare size={28} className="text-white/25" />
+          <p className="max-w-sm font-mono text-[11px] uppercase tracking-[0.26em] text-white/40">
+            Use the command strip to query active pipelines
+          </p>
+          <p className="max-w-md text-sm italic text-white/30">
+            e.g. &ldquo;Interrogate Jackson Construction AST Sync&rdquo;
+          </p>
         </div>
       </section>
     </div>

@@ -10,34 +10,136 @@
   --gold: 196 163 90;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  background: linear-gradient(145deg, #080808 0%, #0f0f0f 48%, #0a0a0a 100%);
+  background: linear-gradient(145deg, #080808 0%, #0f0f0f 40%, #0a0a0a 100%);
   color: rgb(var(--foreground));
   min-height: 100vh;
   position: relative;
 }
 
-/* Ambient Atmosphere */
-body::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: radial-gradient(circle at center, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: 96px 96px;
-  mask-image: radial-gradient(circle at center, black, transparent 80%);
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0.4;
+/* Brand selection — gold-tinted per BRAND.md */
+::selection {
+  background: rgba(196, 163, 90, 0.25);
+  color: #fff;
 }
 
+/* Brand scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #0A0A0A;
+}
+::-webkit-scrollbar-thumb {
+  background: #2A2A2A;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
+
+/* Hero animations — play on page load */
+@keyframes heroFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heroFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.hero-fade-in {
+  opacity: 0;
+  animation: heroFadeIn 0.8s ease-out forwards;
+}
+
+.hero-fade-up {
+  opacity: 0;
+  animation: heroFadeUp 0.9s ease-out forwards;
+}
+
+.hero-delay-1 { animation-delay: 0.1s; }
+.hero-delay-2 { animation-delay: 0.3s; }
+.hero-delay-3 { animation-delay: 0.5s; }
+.hero-delay-4 { animation-delay: 0.7s; }
+
+.float {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Atmosphere layers — apply as absolute children of a relative parent */
+.ambient-grid {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 96px 96px;
+  mask-image: radial-gradient(circle at center, black 35%, transparent 82%);
+  -webkit-mask-image: radial-gradient(circle at center, black 35%, transparent 82%);
+}
+
+.page-noise {
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px),
+    radial-gradient(circle at 80% 10%, rgba(196, 163, 90, 0.06) 0 1px, transparent 1px),
+    radial-gradient(circle at 60% 70%, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px);
+  background-size: 18px 18px, 24px 24px, 20px 20px;
+  mix-blend-mode: soft-light;
+}
+
+/* Liquid glass — the dominant Engine AI surface */
 .liquid-glass {
-  background: rgba(12, 12, 12, 0.84);
-  backdrop-filter: blur(24px) saturate(140%);
+  position: relative;
+  overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.32), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.03)),
+    linear-gradient(180deg, rgba(10, 10, 10, 0.38), rgba(10, 10, 10, 0.18));
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+}
+
+.liquid-glass::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.14), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 34%);
+  opacity: 0.9;
+}
+
+.liquid-glass-gold {
+  background:
+    linear-gradient(135deg, rgba(196, 163, 90, 0.18), rgba(255, 255, 255, 0.05)),
+    linear-gradient(180deg, rgba(10, 10, 10, 0.34), rgba(10, 10, 10, 0.16));
+  border-color: rgba(196, 163, 90, 0.24);
+  box-shadow:
+    0 18px 46px rgba(0, 0, 0, 0.34),
+    0 0 24px rgba(196, 163, 90, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .gold-glow {
