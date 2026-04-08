@@ -65,21 +65,21 @@ All eight calls were locked during the overnight session. See `docs/decisions.md
 
 | # | Decision | Locked value |
 |---|---|---|
-| 1 | MCP server runtime | **In-process** inside the Next.js Node.js runtime. Lowest-risk way to prove the wrapper contract. Re-host to a separate process in a later phase if coupling becomes a problem. |
-| 2 | Linear API key storage | **Environment variable** `LINEAR_API_KEY` on Vercel, single Engine AI workspace. Per-tenant credentials land alongside real auth in Phase 1.5. |
-| 3 | Wrapper → MCP auth | **None.** Falls out of in-process — function call in shared memory, no auth surface. |
-| 4 | Linear MCP server implementation | **Official Linear MCP server** (or the highest-quality community implementation if no official one exists). Exact-pinned in `package.json`. If nothing meets the quality bar, escalate — we will not hand-roll a Linear MCP server inside Phase 1b. |
-| 5 | Linear tool scope | **One tool only:** `create_comment` on an existing issue by ID. No `create_issue`, no search, no update, no labels. |
+| 1 | MCP server runtime | **Linear's official hosted remote MCP server at `https://mcp.linear.app/mcp`.** We are the *client*, not running a server. This is a streamable-HTTP remote MCP endpoint maintained by Linear. No local lifecycle, no process management, no module to instantiate. Discovered during the spike — the earlier "in-process" option is moot because Linear hosts the server itself. |
+| 2 | Linear API key storage | **Environment variable** `LINEAR_API_KEY` on Vercel, single Engine AI workspace. Passed as `Authorization: Bearer <key>` on the streamable-HTTP transport. Per-tenant credentials land alongside real auth in Phase 1.5. |
+| 3 | Wrapper → MCP auth | **Bearer token** in the `Authorization` header of the streamable-HTTP transport. Falls out of Decision 2 — no additional auth layer beyond the existing API key. |
+| 4 | MCP client implementation | **`@modelcontextprotocol/sdk`** (the official TypeScript MCP SDK). Imports: `Client` from `@modelcontextprotocol/sdk/client/index.js` and `StreamableHTTPClientTransport` from `@modelcontextprotocol/sdk/client/streamableHttp.js`. Exact-pinned in `package.json`. No Linear-specific package needed — the client speaks the MCP protocol, the server happens to be Linear's. |
+| 5 | Linear tool scope | **One tool only:** comment creation on an existing issue. First call of `tools/list` will confirm the exact tool name (likely `createComment` or similar). No `create_issue`, no search, no update, no labels. |
 | 6 | How user specifies target issue | **Optional `linear_issue_id` text field on `BriefForm`** with client-side validation against `/^[A-Z]+-\d+$/`. One new nullable column on `projects`. |
 | 7 | Failure policy | **Run still marks complete; failure logged as a `linear_post` `run_step` with `status='failed'` and a non-empty `error`**. No retry. No silent hang. Audit view surfaces the failure. |
 | 8 | Response time budget | **3 seconds soft target, no hard SLA.** If synchronous posting becomes a UX problem, the fix is async posting in Phase 1c durability, not a bolt-on retry in 1b. |
 
 ### Why these answers (one line each)
 
-1. **In-process** — the goal of 1b is proving the wrapper contract, not hosting decisions. In-process lets us focus on the contract.
+1. **Linear-hosted remote** — Linear publishes an official MCP server at `mcp.linear.app/mcp`, so there is no hosting decision to make. Our code is purely an MCP client. Original plan assumed we would install and run a server; discovery corrected that assumption.
 2. **Env var** — Phase 1a is single-tenant; a per-tenant credentials table is premature until real auth lands.
-3. **No auth** — falls out of in-process naturally.
-4. **Official SDK** — hand-rolling an MCP server defeats the entire point of using MCP.
+3. **Bearer token** — trivially supported by the streamable-HTTP transport via `requestInit.headers`.
+4. **Official SDK** — `@modelcontextprotocol/sdk` is the canonical TypeScript MCP client. No reason to roll our own HTTP plumbing.
 5. **One tool** — the scope discipline from Phase 1a carries forward. One tool, one path, one failure mode to reason about.
 6. **Optional form field** — explicit, discoverable, and the auto-detect alternative is a false-positive hazard.
 7. **Soft failure** — the Linear post is a side effect, not part of the run. Conflating the two invites the wrong error handling.
@@ -120,14 +120,21 @@ ALTER TABLE projects
 
 Seven steps. Run `tsc --noEmit && npm run lint && npm run test && npm run build` after each. No commits without that gate green.
 
-### Step 1 — MCP runtime spike *(~3-4 hours)*
+### Step 1 — MCP client spike *(~2-3 hours)*
 
-- Identify the chosen Linear MCP server package. If the official one doesn't exist or is low-quality, stop and escalate.
-- Install exact-pinned: `npm install --save-exact @modelcontextprotocol/sdk linear-mcp-server-or-equivalent`. Also exact-pin in `package.json`.
-- Bring up the server in-process. New module at `src/lib/mcp/linear-server.ts` that lazy-instantiates on first call and caches the instance.
-- Verify `tools/list` returns `create_comment` (or whatever the exact tool name is — cross-check it, don't assume).
-- Commit a disposable dev-only route at `src/app/api/dev/linear-ping/route.ts` gated behind `NODE_ENV !== 'production'` that exercises `create_comment` against a test issue. This route MUST be deleted before the Phase 1b PR lands.
-- Do not proceed to Step 2 until the spike route works end-to-end against a real Linear issue.
+The original plan called this "MCP runtime spike" and envisioned installing and running a local Linear MCP server. During research it became clear Linear hosts the server themselves at `https://mcp.linear.app/mcp`, so our job is purely writing a client. Scope collapsed accordingly.
+
+- Install exact-pinned: `npm install --save-exact @modelcontextprotocol/sdk`. Just the SDK. No Linear-specific package.
+- New module at `src/lib/mcp/linear-client.ts`. Responsibilities:
+  - Lazy-instantiate an MCP `Client` with `StreamableHTTPClientTransport` pointed at `https://mcp.linear.app/mcp`.
+  - Pass `Authorization: Bearer ${process.env.LINEAR_API_KEY}` via `requestInit.headers`.
+  - Throw loudly at first use if `LINEAR_API_KEY` is missing — no silent no-ops.
+  - Module-level singleton so multiple `postLinearComment` calls in the same process reuse the same client.
+  - Export a `getLinearMcpClient()` function and a `closeLinearMcpClient()` for test teardown.
+- Commit a disposable dev-only route at `src/app/api/dev/linear-ping/route.ts` gated behind `NODE_ENV !== 'production'` that calls `client.listTools()` and returns the result as JSON. This is the manual verification handle for "does the connection actually work". It MUST be deleted before the Phase 1b PR lands.
+- Do not proceed to Step 2 until the spike route returns a real tool list from Linear.
+
+Known risk: a reported issue in the MCP SDK ([#495](https://github.com/modelcontextprotocol/typescript-sdk/issues/495)) notes custom headers set on `StreamableHTTPClientTransport` may not reach the server in some versions. If the spike route fails with an auth error, check the SDK version and that issue's status before blaming Linear.
 
 ### Step 2 — Sealed envelope wrapper *(~2-3 hours)*
 
