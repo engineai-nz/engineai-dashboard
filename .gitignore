@@ -32,6 +32,8 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...but example files MUST be tracked — they are the env contract.
+!.env*.example
 
 # vercel
 .vercel

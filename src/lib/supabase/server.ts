@@ -13,6 +13,7 @@
  * Agents NEVER import this file directly. They go through the tool wrappers.
  */
 
+import 'server-only';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 let _serverClient: SupabaseClient | null = null;
