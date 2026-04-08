@@ -62,3 +62,31 @@ export async function createProject(input: {
   }
   return data as ProjectRow;
 }
+
+/**
+ * Update a project's status. Used by the submit-brief route to transition
+ * projects through the lifecycle (pending → running → complete/failed) so
+ * the audit view never shows a project stuck in 'pending' after a run has
+ * already started or failed. Tenant-scoped as defence in depth even though
+ * project IDs are globally unique — mirrors the read helpers' pattern.
+ */
+export async function updateProjectStatus(input: {
+  id: string;
+  tenantId: string;
+  status: ProjectStatus;
+}): Promise<void> {
+  const supabase = getSupabaseServiceClient();
+  const { error } = await supabase
+    .from('projects')
+    .update({
+      status: input.status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', input.id)
+    .eq('tenant_id', input.tenantId);
+  if (error) {
+    throw new Error(
+      `[db/projects] updateProjectStatus(${input.status}) failed: ${error.message}`,
+    );
+  }
+}

@@ -10,7 +10,15 @@
 
 import { generateText } from 'ai';
 import type { DiscoveryOutput } from './discovery-agent';
-import { getModel } from './model';
+import { getModel, stripReasoningTokens } from './model';
+
+// Agent call timeout. PRDs are longer outputs than Discovery JSON, so
+// we allow a bit more headroom. 90s matches Discovery — if this becomes
+// a problem we can tune per-agent.
+const PRD_TIMEOUT_MS = 90_000;
+// PRD output is full markdown (8 sections, numbered FRs). 4000 tokens
+// fits a thorough PRD comfortably. Prevents runaway reasoning models.
+const PRD_MAX_OUTPUT_TOKENS = 4000;
 
 const SYSTEM_PROMPT = `You are the PRD agent for Engine AI's executive cockpit. \
 You receive the original founder brief, the division, and structured \
@@ -70,7 +78,18 @@ export async function runPrdAgent(input: {
     model: getModel(),
     system: SYSTEM_PROMPT,
     prompt: userPrompt,
+    abortSignal: AbortSignal.timeout(PRD_TIMEOUT_MS),
+    maxOutputTokens: PRD_MAX_OUTPUT_TOKENS,
   });
 
-  return result.text;
+  // Reasoning models (MiniMax, o1-style) emit <think> blocks that would
+  // otherwise leak directly into the persisted PRD markdown. Strip them
+  // centrally — see src/lib/agents/model.ts for the helper.
+  const stripped = stripReasoningTokens(result.text);
+  if (stripped === '') {
+    throw new Error(
+      '[agents/prd] PRD was empty after reasoning-token strip (possible timeout or refusal)',
+    );
+  }
+  return stripped;
 }

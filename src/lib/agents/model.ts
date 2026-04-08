@@ -49,6 +49,33 @@ function resolveProvider(): Provider {
   );
 }
 
+/**
+ * Strip reasoning-model artefacts from LLM output.
+ *
+ * Reasoning models (MiniMax-M2, DeepSeek-R1, o1-style) emit their private
+ * chain-of-thought inside `<think>`, `<thinking>`, or `<reasoning>` tags.
+ * Downstream code (JSON.parse, markdown rendering, Zod validation) never
+ * wants to see that prose — it fails JSON parsing and pollutes PRD output.
+ *
+ * This helper is the single central entry point for stripping those tags.
+ * Every agent that calls a reasoning model should run its raw text through
+ * this before parsing or returning. Keep the regex generous:
+ *   - Case-insensitive (i flag)
+ *   - Tag attributes allowed: `<think foo="bar">`
+ *   - Cross-line content via [\s\S]*? (non-greedy)
+ *   - Backreference \1 ensures the closing tag matches the opener
+ *
+ * Do NOT tighten this to only `<think>` — tonight's dev-server incident was
+ * caused by exactly that mistake in discovery-agent.ts. MiniMax emitted
+ * `<thinking>...</thinking>` which the old regex missed, the raw prose hit
+ * JSON.parse, and the run failed. One centralised helper per file per rule.
+ */
+export function stripReasoningTokens(text: string): string {
+  return text
+    .replace(/<(think|thinking|reasoning)[^>]*>[\s\S]*?<\/\1>/gi, '')
+    .trim();
+}
+
 export function getModel(): LanguageModel {
   const provider = resolveProvider();
   const modelId = process.env.LLM_MODEL ?? DEFAULT_MODELS[provider];

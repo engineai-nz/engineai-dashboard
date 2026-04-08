@@ -15,7 +15,7 @@ export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createProject } from '@/lib/db/projects';
+import { createProject, updateProjectStatus } from '@/lib/db/projects';
 import { runCeoPipeline } from '@/lib/agents/ceo-agent';
 import { getCurrentTenantId } from '@/lib/tenant/current';
 import { sanitiseError } from '@/lib/cockpit/sanitize-error';
@@ -53,6 +53,12 @@ export async function POST(req: Request) {
     divisionSlug: parsed.data.division_slug,
   });
 
+  // Transition to 'running' immediately so the audit view never shows a
+  // project stuck in 'pending' while its pipeline is mid-execution. The
+  // CEO pipeline manages its own `runs` row lifecycle — this is the
+  // project-level mirror.
+  await updateProjectStatus({ id: project.id, tenantId, status: 'running' });
+
   try {
     const result = await runCeoPipeline({
       projectId: project.id,
@@ -60,6 +66,11 @@ export async function POST(req: Request) {
       brief: project.brief,
       divisionSlug: project.division_slug,
       tenantId,
+    });
+    await updateProjectStatus({
+      id: project.id,
+      tenantId,
+      status: 'complete',
     });
     return NextResponse.json({
       project_id: project.id,
@@ -72,6 +83,20 @@ export async function POST(req: Request) {
     // the pipeline (e.g. createProject failure path that would otherwise
     // never reach here) is still safe.
     const sanitised = sanitiseError(err);
+    // Best-effort rollback of the project row to 'failed' so the audit view
+    // doesn't leave an orphan 'pending' or 'running' project behind. If THIS
+    // update also fails, log it but still return the original pipeline error
+    // so the user sees the real cause, not the rollback failure.
+    await updateProjectStatus({
+      id: project.id,
+      tenantId,
+      status: 'failed',
+    }).catch((updateErr) => {
+      console.error(
+        '[submit-brief] failed to mark project as failed after pipeline error:',
+        updateErr,
+      );
+    });
     return NextResponse.json(
       {
         project_id: project.id,

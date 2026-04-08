@@ -17,7 +17,16 @@
 
 import { generateText } from 'ai';
 import { z } from 'zod';
-import { getModel } from './model';
+import { getModel, stripReasoningTokens } from './model';
+
+// Agent call timeout. Reasoning models can take 30-60s on long briefs;
+// 90s gives headroom without hanging the request indefinitely. Phase 1c
+// will wrap this in Vercel Workflows with proper durability + retry.
+const DISCOVERY_TIMEOUT_MS = 90_000;
+// Sanity cap on output tokens. Discovery output is a small JSON object
+// (3-8 findings + 2-6 assumptions + 1-5 questions) — 2000 tokens is
+// plenty, and it bounds runaway reasoning models.
+const DISCOVERY_MAX_OUTPUT_TOKENS = 2000;
 
 export const DiscoveryOutputSchema = z.object({
   findings: z
@@ -58,12 +67,12 @@ prose before or after, no markdown code fences, no commentary:
 }`;
 
 /**
- * Strip reasoning-model artefacts so the raw response can be JSON-parsed.
- * Handles <think>...</think> blocks (MiniMax, DeepSeek-R1) and ```json
- * fences that some models add despite instructions.
+ * Clean JSON output from reasoning models: strip reasoning tags (centrally
+ * via stripReasoningTokens in model.ts), drop ```json fences, and extract
+ * the first {...} object if the model added trailing prose.
  */
 function cleanModelJson(raw: string): string {
-  let cleaned = raw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+  let cleaned = stripReasoningTokens(raw);
   // Drop an opening fence + optional language tag, and the closing fence.
   cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
   // Extract the first {...} object if the model added trailing prose.
@@ -83,9 +92,29 @@ export async function runDiscoveryAgent(input: {
     model: getModel(),
     system: SYSTEM_PROMPT,
     prompt: `Division: ${input.divisionSlug}\n\nBrief:\n${input.brief}`,
+    abortSignal: AbortSignal.timeout(DISCOVERY_TIMEOUT_MS),
+    maxOutputTokens: DISCOVERY_MAX_OUTPUT_TOKENS,
   });
 
+  // Preserve signal on empty responses so we can tell "model timed out /
+  // refused / returned nothing" apart from "model returned malformed JSON".
+  // Previously an empty string here surfaced as "non-JSON" which lost the
+  // distinction — see tasks/lessons.md for the overnight incident.
+  const rawPreview = result.text.slice(0, 200);
+  if (result.text.trim() === '') {
+    throw new Error(
+      '[agents/discovery] empty response from model (possible timeout or refusal)',
+    );
+  }
+
   const cleaned = cleanModelJson(result.text);
+  if (cleaned === '') {
+    throw new Error(
+      `[agents/discovery] response contained only reasoning tokens after strip. ` +
+        `Raw preview (first 200 chars): ${rawPreview}`,
+    );
+  }
+
   let parsed: unknown;
   try {
     parsed = JSON.parse(cleaned);
