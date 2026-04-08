@@ -87,7 +87,7 @@ describe('postLinearComment', () => {
       name: string;
       arguments: { issueId: string; body: string };
     };
-    expect(callArg.name).toBe('create_comment');
+    expect(callArg.name).toBe('save_comment');
     expect(callArg.arguments.issueId).toBe('ENG-42');
     expect(callArg.arguments.body).toBe('# PRD\n\nThis is a test PRD.');
 

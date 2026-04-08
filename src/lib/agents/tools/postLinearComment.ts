@@ -35,14 +35,14 @@ import { appendRunStep } from '@/lib/db/runs';
 /**
  * Tool name the Linear MCP server exposes for comment creation.
  *
- * NOTE: Verify this against the actual response from `tools/list` the
- * first time we call the server. Linear's docs confirm create_comment
- * functionality exists but do not pin the exact tool name — it may be
- * `create_comment`, `createComment`, `comment_create`, or similar. If
- * the first real call fails with "tool not found", fix this constant
- * and re-run — do not extend the tool name list or guess multiple.
+ * Verified 2026-04-09 against Linear's hosted MCP server via
+ * `/api/dev/linear-ping`: Linear uses a unified `save_comment` tool
+ * that handles both create and update. When called without an `id`
+ * it creates; when called with an `id` it updates the existing
+ * comment. Phase 1b only ever creates — we pass `issueId` + `body`
+ * and omit `id`.
  */
-const LINEAR_MCP_CREATE_COMMENT_TOOL = 'create_comment';
+const LINEAR_MCP_CREATE_COMMENT_TOOL = 'save_comment';
 
 export interface PostLinearCommentInput {
   /**
