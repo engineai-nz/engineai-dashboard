@@ -21,6 +21,13 @@ export type ProjectRow = {
   status: ProjectStatus;
   created_at: string;
   updated_at: string;
+  /**
+   * Phase 1b: optional Linear issue identifier (e.g. 'ENG-123') that
+   * the CEO pipeline posts the PRD comment to via the Linear MCP.
+   * Nullable — briefs submitted without this field skip the Linear
+   * post step. Validated against /^[A-Z]+-\d+$/ at the API boundary.
+   */
+  linear_issue_id: string | null;
 };
 
 export async function listProjectsForTenant(
@@ -43,6 +50,13 @@ export async function createProject(input: {
   name: string;
   brief: string;
   divisionSlug: string;
+  /**
+   * Phase 1b: optional Linear issue ID. When set, the CEO pipeline
+   * posts the generated PRD as a comment on this Linear issue after
+   * saveArtifact succeeds. When null/undefined, the Linear post
+   * step is skipped.
+   */
+  linearIssueId?: string | null;
 }): Promise<ProjectRow> {
   const supabase = getSupabaseServiceClient();
   const { data, error } = await supabase
@@ -52,6 +66,7 @@ export async function createProject(input: {
       name: input.name,
       brief: input.brief,
       division_slug: input.divisionSlug,
+      linear_issue_id: input.linearIssueId ?? null,
     })
     .select('*')
     .single();

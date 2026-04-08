@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * BriefForm — Phase 1a.
+ * BriefForm — Phase 1a + 1b.
  *
  * Client component. Posts a structured brief to /api/cockpit/submit-brief
  * and shows the resulting run id (or error). No streaming yet — Phase 1c
@@ -10,6 +10,11 @@
  * Submit blocks until the CEO pipeline finishes. That can be 20-60s for
  * the discovery + drafting LLM calls. The submit button shows a clear
  * loading state.
+ *
+ * Phase 1b: optional Linear issue ID field. When set and valid, the
+ * CEO pipeline posts the resulting PRD as a comment on that Linear
+ * issue via the sealed Linear MCP wrapper. When empty, the linear_post
+ * step is logged as skipped.
  */
 
 import { useState, useTransition } from 'react';
@@ -21,6 +26,11 @@ const DIVISIONS = [
   { slug: 'modular', label: 'Modular' },
   { slug: 'desktop', label: 'Desktop' },
 ] as const;
+
+// Same regex the API route enforces — keep the two in sync or surface
+// a server-side error if they drift. Matches strings like "ENG-123",
+// "BIAB-42", etc. The TEAM key is all-caps letters + optional digits.
+const LINEAR_ISSUE_ID_PATTERN = /^[A-Z][A-Z0-9]*-\d+$/;
 
 type SubmitResult =
   | { kind: 'idle' }
@@ -40,19 +50,42 @@ export function BriefForm() {
   const [division, setDivision] = useState<(typeof DIVISIONS)[number]['slug']>(
     'biab',
   );
+  const [linearIssueId, setLinearIssueId] = useState('');
   const [result, setResult] = useState<SubmitResult>({ kind: 'idle' });
   const [isPending, startTransition] = useTransition();
 
+  // Client-side validation for the optional Linear issue ID. Empty is
+  // always valid (skips the Linear post). Non-empty must match the
+  // pattern or we short-circuit the submit.
+  const linearIssueIdTrimmed = linearIssueId.trim();
+  const linearIssueIdError =
+    linearIssueIdTrimmed !== '' &&
+    !LINEAR_ISSUE_ID_PATTERN.test(linearIssueIdTrimmed)
+      ? 'format should be TEAM-123 (e.g. ENG-42)'
+      : null;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (linearIssueIdError !== null) {
+      return;
+    }
     setResult({ kind: 'pending' });
+
+    const payload: Record<string, unknown> = {
+      name,
+      brief,
+      division_slug: division,
+    };
+    if (linearIssueIdTrimmed !== '') {
+      payload.linear_issue_id = linearIssueIdTrimmed;
+    }
 
     let res: Response;
     try {
       res = await fetch('/api/cockpit/submit-brief', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name, brief, division_slug: division }),
+        body: JSON.stringify(payload),
       });
     } catch (err) {
       setResult({
@@ -85,6 +118,7 @@ export function BriefForm() {
     setResult(success);
     setName('');
     setBrief('');
+    setLinearIssueId('');
     // Refresh the server components (RunHistory) so the new run shows up.
     startTransition(() => router.refresh());
   }
@@ -158,10 +192,38 @@ export function BriefForm() {
         />
       </div>
 
+      <div className="space-y-2">
+        <label
+          htmlFor="brief-linear"
+          className="font-mono text-xs uppercase tracking-wider text-secondary"
+        >
+          linear issue <span className="text-muted">(optional)</span>
+        </label>
+        <input
+          id="brief-linear"
+          type="text"
+          value={linearIssueId}
+          onChange={(e) => setLinearIssueId(e.target.value)}
+          placeholder="ENG-42"
+          aria-invalid={linearIssueIdError !== null}
+          aria-describedby="brief-linear-hint"
+          className="w-full rounded-sm border border-border bg-background px-3 py-2 font-mono text-sm uppercase text-primary placeholder:text-muted placeholder:normal-case focus:border-gold focus:outline-none aria-[invalid=true]:border-signal-error"
+        />
+        <p
+          id="brief-linear-hint"
+          className={`font-mono text-[10px] ${
+            linearIssueIdError !== null ? 'text-signal-error' : 'text-muted'
+          }`}
+        >
+          {linearIssueIdError ??
+            'when set, the PRD will post as a comment on this issue after the run completes'}
+        </p>
+      </div>
+
       <div className="flex items-center justify-between gap-4">
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || linearIssueIdError !== null}
           className="rounded-sm border border-gold px-4 py-2 font-mono text-xs uppercase tracking-wider text-gold transition-colors hover:bg-gold-muted disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting ? 'running pipeline…' : 'submit brief'}
