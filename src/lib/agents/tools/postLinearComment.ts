@@ -4,11 +4,12 @@
  *
  * Design contract (the "sealed envelope pattern" in its smallest form):
  *
- *   1. This is the ONLY file — alongside `src/lib/mcp/linear-client.ts` —
- *      that reads `process.env.LINEAR_API_KEY`. Agents and other callers
- *      never see the secret; they only see the `{ ok, url?, error? }`
- *      return shape. A grep-based CI check in the Phase 1b exit criteria
- *      enforces this rule.
+ *   1. This file does NOT read `process.env.LINEAR_API_KEY`. That
+ *      secret is read exactly once in `src/lib/mcp/linear-client.ts`
+ *      and never reaches this layer or anything above it. Agents and
+ *      route handlers only see the `{ ok, url?, error? }` return
+ *      shape. A grep-based CI check in the Phase 1b exit criteria
+ *      enforces the "one file, one read" rule.
  *   2. The wrapper ALWAYS writes a `run_steps` row with `step_name =
  *      'linear_post'`, regardless of success or failure. The audit view
  *      in the cockpit is the single source of truth for what happened.

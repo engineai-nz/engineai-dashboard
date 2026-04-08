@@ -15,10 +15,13 @@
  * `getLinearMcpClient()`. Do not instantiate `Client` or
  * `StreamableHTTPClientTransport` anywhere else.
  *
- * Credential isolation: `process.env.LINEAR_API_KEY` is read ONLY in
- * this file and in `src/lib/agents/tools/postLinearComment.ts`. The
- * Phase 1b sealed envelope rule is "agents never see Linear secrets"
- * — the grep check in the Phase 1b exit criteria enforces it.
+ * Credential isolation: `process.env.LINEAR_API_KEY` is read ONCE,
+ * in `initLinearMcpClient()` below, and never stored outside the
+ * transport's internal request headers. No other module in the
+ * codebase reads this env var — the Phase 1b sealed envelope rule
+ * is "one file, one read" and the grep check in the Phase 1b exit
+ * criteria enforces it. If a second reader is ever needed, push the
+ * wrapper API through this module instead.
  */
 
 import 'server-only';

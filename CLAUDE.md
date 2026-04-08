@@ -32,12 +32,12 @@
 ## Stack
 
 - **Frontend:** Next.js 16 (App Router), React 19, Tailwind CSS, Framer Motion
-- **AI/Orchestration:** Vercel AI SDK v6, Google Gemini (`@ai-sdk/google`)
-- **Durable Logic:** Vercel Workflows (`@upstash/workflow`) for long-running pipelines
+- **AI/Orchestration:** Vercel AI SDK v6, provider-agnostic via `src/lib/agents/model.ts` (Anthropic + MiniMax supported in Phase 1a, others via env flip)
+- **MCP client:** `@modelcontextprotocol/sdk` (Phase 1b onwards, Linear hosted remote)
+- **Durable Logic:** deferred to Phase 1c — no `@upstash/workflow` yet, agents are plain async functions in 1a
 - **Database/Auth:** Supabase (PostgreSQL + RLS)
 - **Validation:** Zod schemas throughout (HandoffEnvelopeSchema, etc.)
-- **Engineering:** `ts-morph` for AST-based code refactoring
-- **Testing:** Playwright (E2E)
+- **Testing:** Vitest unit tests in `tests/unit/`. Playwright E2E is deferred to Phase 1c per `docs/phase1-plan.md`.
 - **Design System:** Tech Noir (`#0A0A0A` / `#C4A35A`)
 
 ---
@@ -46,9 +46,11 @@
 
 ```bash
 npm install
-npm run dev        # Next.js dev server with Turbo
+npm run dev        # Next.js dev server
+npm run typecheck  # tsc --noEmit (pre-commit hook enforces this)
 npm run lint       # ESLint 9
-npm run test:e2e   # Playwright E2E tests
+npm run test       # Vitest unit tests
+npm run build      # Full production build (includes TS check)
 ```
 
 Requires Node >= 20.10.0. See `.env.local.example` for required environment variables.
