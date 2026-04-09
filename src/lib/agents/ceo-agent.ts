@@ -1,8 +1,8 @@
 /**
- * CEO agent / orchestrator — Phase 1a.
+ * CEO agent / orchestrator — Phase 1a + 1b.
  *
- * Plain async function in 1a. No durable workflow wrapper — that lands
- * in Phase 1c (Vercel Workflows + outbox + effect IDs). The point of
+ * Plain async function. No durable workflow wrapper — that lands in
+ * Phase 1c (Vercel Workflows + outbox + effect IDs). The point of
  * keeping it as a flat function for now is so the read-model + agent
  * boundary can be exercised end-to-end before durability is bolted on.
  *
@@ -14,13 +14,20 @@
  *   4. PRD agent → markdown
  *      → appendRunStep('drafting')
  *      → saveArtifact(kind='prd')
- *   5. markRunComplete
+ *   5. Phase 1b: if project.linear_issue_id is set, post PRD to Linear
+ *      via postLinearComment (sealed wrapper — agent never sees the
+ *      Linear API key). If not set, write an explicit skipped
+ *      linear_post run_step so the audit view is the single source of
+ *      truth. Linear post failures are side effects — they do NOT
+ *      fail the run (Phase 1b Decision 7).
+ *   6. markRunComplete
  *
- * On any throw, markRunFailed with the error message.
+ * On any throw before Step 5, markRunFailed with the error message.
  */
 
 import { runDiscoveryAgent } from './discovery-agent';
 import { runPrdAgent } from './prd-agent';
+import { postLinearComment } from './tools/postLinearComment';
 import {
   createRun,
   appendRunStep,
@@ -44,6 +51,13 @@ export async function runCeoPipeline(input: {
   brief: string;
   divisionSlug: string;
   tenantId: string;
+  /**
+   * Phase 1b: optional Linear issue ID. When set, the pipeline posts
+   * the generated PRD as a comment on this issue after saveArtifact.
+   * When null/undefined, an explicit skipped linear_post run_step is
+   * written instead so the audit view shows the skip.
+   */
+  linearIssueId?: string | null;
 }): Promise<CeoRunResult> {
   const run = await createRun({
     projectId: input.projectId,
@@ -109,6 +123,39 @@ export async function runCeoPipeline(input: {
       kind: 'prd',
       contentMarkdown: prdMarkdown,
     });
+
+    // Phase 1b: post PRD as a Linear comment when the brief specified
+    // a linear_issue_id. Failures here do NOT fail the run — they are
+    // logged as a 'linear_post' run_step via postLinearComment itself.
+    // When no issue ID is set, write an explicit skipped step so the
+    // audit view shows why nothing was posted.
+    if (
+      input.linearIssueId !== null &&
+      input.linearIssueId !== undefined &&
+      input.linearIssueId.trim() !== ''
+    ) {
+      await postLinearComment({
+        tenantId: input.tenantId,
+        runId: run.id,
+        issueId: input.linearIssueId,
+        commentMarkdown: prdMarkdown,
+      });
+    } else {
+      await appendRunStep({
+        runId: run.id,
+        tenantId: input.tenantId,
+        stepName: 'linear_post',
+        inputJson: {
+          skipped: true,
+          reason: 'no_linear_issue_id',
+        },
+        outputJson: {
+          skipped: true,
+          message: 'Brief did not specify a Linear issue ID.',
+        },
+        status: 'complete',
+      });
+    }
 
     await markRunComplete({ runId: run.id, tenantId: input.tenantId });
 

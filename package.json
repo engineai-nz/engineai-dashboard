@@ -17,6 +17,7 @@
     "@ai-sdk/anthropic": "^3.0.67",
     "@ai-sdk/openai-compatible": "^2.0.41",
     "@ai-sdk/react": "^3.0.151",
+    "@modelcontextprotocol/sdk": "1.29.0",
     "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.102.0",
     "ai": "^6.0.149",

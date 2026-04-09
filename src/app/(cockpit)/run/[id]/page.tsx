@@ -146,6 +146,9 @@ function StepCard({ step }: { step: RunStepRow }) {
         </p>
         <span className="font-mono text-xs text-muted">{step.status}</span>
       </div>
+      {step.step_name === 'linear_post' ? (
+        <LinearPostSummary step={step} />
+      ) : null}
       <details className="mt-2">
         <summary className="cursor-pointer font-mono text-xs uppercase tracking-wider text-secondary hover:text-primary">
           input + output
@@ -162,5 +165,73 @@ function StepCard({ step }: { step: RunStepRow }) {
         </div>
       </details>
     </li>
+  );
+}
+
+/**
+ * One-line human summary of a linear_post step, rendered above the
+ * generic JSON details so the audit view doesn't force the user to
+ * expand the payload to understand what happened.
+ *
+ * Three shapes:
+ *   - skipped (no linear_issue_id was set on the brief)
+ *   - complete (comment posted — show the URL if we got one back)
+ *   - failed (show the error message, run is still complete because
+ *     linear post is a post-run side effect per Phase 1b decisions.md)
+ */
+function LinearPostSummary({ step }: { step: RunStepRow }) {
+  const output = (step.output_json ?? {}) as Record<string, unknown>;
+
+  // Skipped path — explicit skip marker in output_json.
+  if (output.skipped === true) {
+    return (
+      <p className="mt-2 font-mono text-xs text-muted">
+        linear post skipped · no issue ID on brief
+      </p>
+    );
+  }
+
+  if (step.status === 'failed') {
+    const errorMessage =
+      typeof output.error_message === 'string'
+        ? output.error_message
+        : 'unknown error';
+    return (
+      <p className="mt-2 font-mono text-xs text-signal-error">
+        linear post failed · {errorMessage}
+      </p>
+    );
+  }
+
+  if (step.status === 'complete') {
+    const url = typeof output.url === 'string' ? output.url : null;
+    if (url !== null) {
+      return (
+        <p className="mt-2 font-mono text-xs text-signal-live">
+          linear comment posted ·{' '}
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-gold"
+          >
+            view on linear →
+          </a>
+        </p>
+      );
+    }
+    return (
+      <p className="mt-2 font-mono text-xs text-signal-live">
+        linear comment posted
+      </p>
+    );
+  }
+
+  // pending / running fallthrough — shouldn't happen in Phase 1b since
+  // the pipeline is synchronous, but render something sensible anyway.
+  return (
+    <p className="mt-2 font-mono text-xs text-muted">
+      linear post · {step.status}
+    </p>
   );
 }

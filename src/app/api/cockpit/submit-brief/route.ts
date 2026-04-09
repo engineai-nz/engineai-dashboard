@@ -2,11 +2,16 @@
  * POST /api/cockpit/submit-brief
  *
  * Phase 1a: structured brief submission. Body shape:
- *   { name: string, brief: string, division_slug: string }
+ *   { name, brief, division_slug, linear_issue_id? }
  *
  * Creates a projects row, runs the CEO pipeline inline (await), returns
  * { project_id, run_id, artifact_id }. No streaming in 1a — Phase 1c
  * adds Vercel Workflows + streaming Generative UI.
+ *
+ * Phase 1b: accepts an optional linear_issue_id. When set, the CEO
+ * pipeline posts the resulting PRD as a comment on that Linear issue
+ * via the sealed Linear MCP wrapper. When not set, the linear_post
+ * run_step is logged as skipped so the audit view is still complete.
  *
  * Node runtime per docs/decisions.md.
  */
@@ -22,10 +27,27 @@ import { sanitiseError } from '@/lib/cockpit/sanitize-error';
 
 const KNOWN_DIVISIONS = ['biab', 'skunkworks', 'modular', 'desktop'] as const;
 
+// Linear issue IDs are always UPPERCASE_TEAM_KEY-POSITIVE_NUMBER, e.g. ENG-123.
+// We validate server-side even though the BriefForm enforces the same regex;
+// never trust the client.
+const LINEAR_ISSUE_ID_REGEX = /^[A-Z][A-Z0-9]*-\d+$/;
+
 const BodySchema = z.object({
   name: z.string().min(1).max(200),
   brief: z.string().min(10).max(8000),
   division_slug: z.enum(KNOWN_DIVISIONS),
+  // Phase 1b: optional, nullable, validated against the Linear issue
+  // ID format. An empty string from the form is coerced to null so the
+  // downstream CEO pipeline can treat "missing" and "blank" the same way.
+  linear_issue_id: z
+    .string()
+    .trim()
+    .regex(LINEAR_ISSUE_ID_REGEX, {
+      message: 'linear_issue_id must match format TEAM-123',
+    })
+    .optional()
+    .nullable()
+    .or(z.literal('').transform(() => null)),
 });
 
 export async function POST(req: Request) {
@@ -51,6 +73,7 @@ export async function POST(req: Request) {
     name: parsed.data.name,
     brief: parsed.data.brief,
     divisionSlug: parsed.data.division_slug,
+    linearIssueId: parsed.data.linear_issue_id ?? null,
   });
 
   // Transition to 'running' immediately so the audit view never shows a
@@ -66,6 +89,7 @@ export async function POST(req: Request) {
       brief: project.brief,
       divisionSlug: project.division_slug,
       tenantId,
+      linearIssueId: project.linear_issue_id,
     });
     await updateProjectStatus({
       id: project.id,
