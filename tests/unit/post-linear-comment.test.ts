@@ -169,6 +169,65 @@ describe('postLinearComment', () => {
     );
   });
 
+  it('isError response: MCP tool returns isError:true and wrapper treats it as a failure', async () => {
+    // Regression: Linear's save_comment sets isError: true on entity-not-found
+    // errors instead of throwing. The wrapper must detect this explicitly or
+    // the failure passes through as a success. Confirmed against the real
+    // Linear MCP on 2026-04-09 with a bogus issue ID.
+    mockClientWith(() => ({
+      isError: true,
+      content: [
+        {
+          type: 'text',
+          text: 'Entity not found: Issue - Could not find referenced Issue.',
+        },
+      ],
+    }));
+    mockAppend.mockResolvedValue({ id: 'step-row-id' });
+
+    const result = await postLinearComment(baseInput);
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain('Entity not found');
+    expect(result.url).toBeUndefined();
+
+    // Audit row must reflect the failure, not a spurious success.
+    expect(mockAppend).toHaveBeenCalledTimes(1);
+    const auditArg = mockAppend.mock.calls[0][0] as {
+      status: string;
+      outputJson: { error_message: string };
+    };
+    expect(auditArg.status).toBe('failed');
+    expect(auditArg.outputJson.error_message).toContain('Entity not found');
+  });
+
+  it('extracts url from a JSON-stringified text content (Linear save_comment shape)', async () => {
+    // Regression: Linear's save_comment returns the comment object as a
+    // JSON-stringified text content item. The extractor must parse it and
+    // pull the url field, not just regex-scan for https://.
+    mockClientWith(() => ({
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            id: '4c57eb37-5280-4735-8498-42a752bb9ea8',
+            body: '# PRD\n\nlong content here',
+            url: 'https://linear.app/engineaico/issue/ENG-121#comment-4c57eb37',
+            createdAt: '2026-04-09T04:03:46.859Z',
+          }),
+        },
+      ],
+    }));
+    mockAppend.mockResolvedValue({ id: 'step-row-id' });
+
+    const result = await postLinearComment(baseInput);
+
+    expect(result.ok).toBe(true);
+    expect(result.url).toBe(
+      'https://linear.app/engineaico/issue/ENG-121#comment-4c57eb37',
+    );
+  });
+
   it('never throws when the MCP client itself fails to initialise', async () => {
     mockGetClient.mockRejectedValue(
       new Error('[mcp/linear] LINEAR_API_KEY is required but not set.'),

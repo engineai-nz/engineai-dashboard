@@ -100,6 +100,18 @@ export async function postLinearComment(
       },
     });
 
+    // MCP tool errors come back as { isError: true, content: [...] } on the
+    // response object — callTool does NOT throw in that case. We have to
+    // check explicitly or "errors" silently pass through as success.
+    // Verified 2026-04-09: a nonexistent issueId returns
+    //   { isError: true, content: [{ type: 'text', text: 'Entity not found: ...' }] }
+    // Treat any isError=true response as a failure and fall into the catch.
+    if (isErrorResponse(response)) {
+      throw new Error(
+        `Linear MCP tool returned an error: ${extractErrorMessage(response)}`,
+      );
+    }
+
     const url = extractCommentUrl(response);
     const summary = summariseResponse(response);
 
@@ -145,37 +157,89 @@ export async function postLinearComment(
 }
 
 /**
+ * Whether an MCP tool response represents a tool-execution error.
+ * Linear's save_comment sets `isError: true` on entity-not-found and
+ * similar failures; other MCP servers follow the same pattern per the
+ * spec. If this is set we must treat the response as a failure even
+ * though callTool did not throw.
+ */
+function isErrorResponse(response: unknown): boolean {
+  if (response === null || typeof response !== 'object') return false;
+  return (response as Record<string, unknown>).isError === true;
+}
+
+/**
+ * Extract a human-readable error message from an MCP tool error
+ * response. Looks at the first text content item; falls back to a
+ * generic message if the shape is unexpected.
+ */
+function extractErrorMessage(response: unknown): string {
+  if (response === null || typeof response !== 'object') {
+    return 'unknown error (non-object response)';
+  }
+  const content = (response as Record<string, unknown>).content;
+  if (Array.isArray(content)) {
+    for (const item of content) {
+      if (item !== null && typeof item === 'object') {
+        const i = item as Record<string, unknown>;
+        if (i.type === 'text' && typeof i.text === 'string' && i.text.length > 0) {
+          return i.text;
+        }
+      }
+    }
+  }
+  return 'unknown error (no text content in response)';
+}
+
+/**
  * Best-effort URL extraction from an MCP tool response. The response
  * shape is loosely specified — content is an array of typed items —
- * so we look across common shapes (structured content first, then a
- * text-content URL match) without being strict. Returns `undefined`
- * if no URL can be found; the audit row still records the full
- * response summary so debugging is possible.
+ * so we look across three shapes in order:
+ *
+ *   1. `structuredContent.url` or `structuredContent.comment.url`
+ *   2. First text content parsed as JSON (Linear returns the full
+ *      comment object as JSON-stringified text); take `url` if present
+ *   3. Fallback: regex-scan the first text content for any `https?://`
+ *
+ * Returns `undefined` if no URL can be found; the audit row still
+ * records the response summary so debugging is possible.
  */
 function extractCommentUrl(response: unknown): string | undefined {
   if (response === null || typeof response !== 'object') return undefined;
   const r = response as Record<string, unknown>;
 
-  // Structured content path — many MCP servers return a JSON-shaped
+  // Structured content path — some MCP servers return a JSON-shaped
   // `structuredContent` alongside the `content` array.
   const structured = r.structuredContent;
   if (structured !== null && typeof structured === 'object') {
     const s = structured as Record<string, unknown>;
     if (typeof s.url === 'string' && s.url.length > 0) return s.url;
-    // Nested shape: { comment: { url: '...' } }
     if (s.comment !== null && typeof s.comment === 'object') {
       const c = s.comment as Record<string, unknown>;
       if (typeof c.url === 'string' && c.url.length > 0) return c.url;
     }
   }
 
-  // Text content path — scan the first text block for a plausible URL.
+  // Text content path — try JSON parse first (Linear's save_comment
+  // returns the comment object as JSON text), then fall back to a
+  // naive URL regex on the raw text.
   const content = r.content;
   if (Array.isArray(content)) {
     for (const item of content) {
       if (item !== null && typeof item === 'object') {
         const i = item as Record<string, unknown>;
         if (i.type === 'text' && typeof i.text === 'string') {
+          // JSON parse attempt — the typical Linear shape is
+          // { id, body, url, createdAt, ... }
+          try {
+            const parsed = JSON.parse(i.text) as unknown;
+            if (parsed !== null && typeof parsed === 'object') {
+              const p = parsed as Record<string, unknown>;
+              if (typeof p.url === 'string' && p.url.length > 0) return p.url;
+            }
+          } catch {
+            // Not JSON — fall through to the regex fallback.
+          }
           const match = i.text.match(/https?:\/\/[^\s<>"]+/);
           if (match !== null) return match[0];
         }
